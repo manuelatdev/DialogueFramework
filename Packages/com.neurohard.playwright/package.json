@@ -5,5 +5,5 @@
   "description": "Grafos de conversación como fuente de diálogo para Prompter.",
   "unity": "6000.3",
   "author": { "name": "Neurohard" },
-  "dependencies": { "com.neurohard.prompter": "0.2.0" }
+  "dependencies": { "com.neurohard.prompter": "0.2.1" }
 }
