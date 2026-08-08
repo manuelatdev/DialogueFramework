@@ -144,6 +144,13 @@ namespace Neurohard.Playwright.Unity
             _lastValidatedJson = json;          // evita que OnValidate tire la caché
             UnityEditor.EditorUtility.SetDirty(this);
         }
+
+        /// <summary>
+    /// Sustituye el grafo en memoria sin tocar el disco. Lo usa el historial
+    /// del editor al deshacer.
+    /// </summary>
+    public void ReplaceGraph(DialogueGraph graph)
+        => _cached = graph ?? throw new System.ArgumentNullException(nameof(graph));
 #endif
     }
 }

@@ -5,18 +5,22 @@ using UnityEditor.UIElements;
 using UnityEngine;
 using UnityEngine.UIElements;
 using Neurohard.Playwright.Unity;
+using Neurohard.Playwright.Io;
 
 namespace Neurohard.Playwright.Editor
 {
     public sealed class DialogueGraphWindow : EditorWindow
     {
-        // Serializado para sobrevivir a los domain reloads.
+        // Serializados para sobrevivir a los domain reloads.
         [SerializeField] private DialogueGraphAsset _asset;
+        [SerializeField] private string _pendingJson;
 
         private DialogueGraphView _view;
         private SimulationPanel _panel;
         private ListView _issues;
         private Label _status;
+
+        private readonly GraphHistory _history = new GraphHistory();
 
         [MenuItem("Window/Neurohard/Visor de grafos")]
         public static void ShowWindow() => GetWindow<DialogueGraphWindow>();
@@ -49,16 +53,31 @@ namespace Neurohard.Playwright.Editor
             saveChangesMessage = "Este grafo tiene cambios sin guardar. ¿Quieres guardarlos?";
             BuildUi();
 
-            // Tras un domain reload el grafo en memoria se pierde: es [NonSerialized].
-            if (hasUnsavedChanges)
+            if (_asset == null) return;
+
+            // Tras un domain reload, el grafo en memoria se perdió: lo restauramos
+            // desde la instantánea que dejamos en OnDisable.
+            if (!string.IsNullOrEmpty(_pendingJson))
             {
-                hasUnsavedChanges = false;
-                Debug.LogWarning(
-                    "[Playwright] Se recompilaron los scripts con cambios sin guardar en el grafo. " +
-                    "Los cambios en memoria se han perdido y se ha recargado desde disco.");
+                try
+                {
+                    var restored = GraphReader.FromJson(_pendingJson);
+                    _asset.ReplaceGraph(restored);
+                    ShowGraph(restored);
+
+                    hasUnsavedChanges = true;
+                    UpdateTitle();
+                    _pendingJson = null;
+                    return;
+                }
+                catch (GraphFormatException)
+                {
+                    _pendingJson = null;   // instantánea corrupta: recarga normal
+                }
             }
 
-            if (_asset != null) Reload();
+            hasUnsavedChanges = false;   // evita que Reload pregunte al abrir
+            Reload();
         }
 
         private void BuildUi()
@@ -66,6 +85,8 @@ namespace Neurohard.Playwright.Editor
             if (_view != null) return;
 
             var toolbar = new Toolbar();
+            toolbar.Add(new ToolbarButton(Undo) { text = "↶" });
+            toolbar.Add(new ToolbarButton(Redo) { text = "↷" });
             toolbar.Add(new ToolbarButton(Reload) { text = "Recargar" });
             toolbar.Add(new ToolbarButton(() => _view?.FrameAll()) { text = "Encuadrar" });
             toolbar.Add(new ToolbarButton(ManualSave) { text = "Guardar" });
@@ -85,6 +106,7 @@ namespace Neurohard.Playwright.Editor
 
             _view = new DialogueGraphView();
             _view.style.flexGrow = 1;
+            _view.WillModify += RecordUndo;
             _view.Modified += MarkDirty;
             body.Add(_view);
 
@@ -94,14 +116,29 @@ namespace Neurohard.Playwright.Editor
 
             rootVisualElement.Add(body);
 
+            // TrickleDown: Unity procesa Cmd+Z con su propio undo si no lo capturamos antes.
             rootVisualElement.RegisterCallback<KeyDownEvent>(evt =>
             {
-                if (evt.keyCode == KeyCode.S && (evt.commandKey || evt.ctrlKey))
+                if (!evt.commandKey && !evt.ctrlKey) return;
+
+                switch (evt.keyCode)
                 {
-                    ManualSave();
-                    evt.StopPropagation();
+                    case KeyCode.S:
+                        ManualSave();
+                        evt.StopPropagation();
+                        break;
+
+                    case KeyCode.Z when evt.shiftKey:
+                        Redo();
+                        evt.StopPropagation();
+                        break;
+
+                    case KeyCode.Z:
+                        Undo();
+                        evt.StopPropagation();
+                        break;
                 }
-            });
+            }, TrickleDown.TrickleDown);
         }
 
         private void BuildIssuesPanel(VisualElement parent)
@@ -134,12 +171,15 @@ namespace Neurohard.Playwright.Editor
             parent.Add(_issues);
         }
 
+        // --- carga ------------------------------------------------------------
+
         private void Reload()
         {
             if (_view == null) return;
             if (!ConfirmDiscard("Recargar descartará los cambios en memoria.")) return;
 
             hasUnsavedChanges = false;
+            _history.Clear();
             UpdateTitle();
 
             if (_asset == null)
@@ -161,6 +201,12 @@ namespace Neurohard.Playwright.Editor
                 return;
             }
 
+            ShowGraph(graph);
+        }
+
+        /// <summary>Vuelca un grafo a la vista, el panel y las incidencias.</summary>
+        private void ShowGraph(DialogueGraph graph)
+        {
             _view.Load(graph);
             _panel.Rebuild(graph);
 
@@ -193,6 +239,41 @@ namespace Neurohard.Playwright.Editor
             var result = GraphSimulator.Simulate(graph, _panel.Context);
             _view.ApplySimulation(result);
             _panel.ShowSummary(result);
+        }
+
+        // --- historial --------------------------------------------------------
+
+        /// <summary>Registra el estado actual ANTES de que la vista lo modifique.</summary>
+        private void RecordUndo()
+        {
+            if (_asset != null && _asset.TryGetGraph(out var graph, out _))
+                _history.Record(graph);
+        }
+
+        private void Undo() => ApplySnapshot(g => _history.Undo(g));
+        private void Redo() => ApplySnapshot(g => _history.Redo(g));
+
+        private void ApplySnapshot(System.Func<DialogueGraph, string> operation)
+        {
+            if (_asset == null || _view == null) return;
+            if (!_asset.TryGetGraph(out var current, out _)) return;
+
+            var json = operation(current);
+            if (json == null) return;
+
+            try
+            {
+                var restored = GraphReader.FromJson(json);
+                _asset.ReplaceGraph(restored);
+                ShowGraph(restored);
+
+                hasUnsavedChanges = true;
+                UpdateTitle();
+            }
+            catch (GraphFormatException ex)
+            {
+                _status.text = $"No se pudo restaurar: {ex.Message}";
+            }
         }
 
         // --- guardado ---------------------------------------------------------
@@ -262,6 +343,13 @@ namespace Neurohard.Playwright.Editor
         {
             EditorApplication.update -= PollActiveNode;
             EditorApplication.playModeStateChanged -= OnPlayModeChanged;
+
+            // Instantánea para sobrevivir a la recompilación.
+            _pendingJson = hasUnsavedChanges
+                           && _asset != null
+                           && _asset.TryGetGraph(out var graph, out _)
+                ? GraphWriter.ToJson(graph)
+                : null;
         }
 
         private void OnPlayModeChanged(PlayModeStateChange state)

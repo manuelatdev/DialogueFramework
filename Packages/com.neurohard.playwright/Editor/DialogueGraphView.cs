@@ -21,6 +21,8 @@ namespace Neurohard.Playwright.Editor
 
         /// <summary>Se emite cuando el usuario modifica algo que hay que guardar.</summary>
         public event System.Action Modified;
+        /// <summary>Se emite justo antes de modificar el grafo, para registrar el undo.</summary>
+        public event System.Action WillModify;
 
         public DialogueGraphView()
         {
@@ -153,9 +155,9 @@ namespace Neurohard.Playwright.Editor
             edge.edgeControl.outputColor = color;
             edge.edgeControl.edgeWidth = Mathf.RoundToInt(width);
             edge.style.opacity = opacity;
-            
+
             // Forzar actualización de la geometría de la curva para que el grosor aplique bien
-            edge.UpdateEdgeControl(); 
+            edge.UpdateEdgeControl();
             edge.MarkDirtyRepaint();
         }
 
@@ -165,7 +167,7 @@ namespace Neurohard.Playwright.Editor
             edge.edgeControl.outputColor = Color.white;
             edge.edgeControl.edgeWidth = 1;
             edge.style.opacity = 1f;
-            
+
             edge.UpdateEdgeControl();
             edge.MarkDirtyRepaint();
         }
@@ -182,6 +184,9 @@ namespace Neurohard.Playwright.Editor
         private GraphViewChange OnGraphViewChanged(GraphViewChange change)
         {
             if (change.movedElements == null) return change;
+
+            // Un arrastre de varios nodos es una sola entrada de historial.
+            WillModify?.Invoke();
 
             var cambiado = false;
             foreach (var element in change.movedElements)
