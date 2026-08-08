@@ -18,12 +18,15 @@ namespace Neurohard.Playwright.Editor
         private readonly ManualQueryResolver _queries = new ManualQueryResolver();
         private VisualElement _queryFields;
 
-        public EvaluationContext Context => new EvaluationContext(_vars, _queries); public event Action Changed;
+        public EvaluationContext Context => new EvaluationContext(_vars, _queries);
+
+        public event Action Changed;
 
         public SimulationPanel()
         {
             style.width = 260;
             style.borderLeftWidth = 1;
+            // Para herramientas distribuidas, considera usar los colores del tema de Unity en un futuro
             style.borderLeftColor = new Color(0f, 0f, 0f, 0.3f);
             style.paddingLeft = 8;
             style.paddingRight = 8;
@@ -56,6 +59,8 @@ namespace Neurohard.Playwright.Editor
         /// <summary>Reconstruye los campos a partir de las variables que usa el grafo.</summary>
         public void Rebuild(DialogueGraph graph)
         {
+            _rawValues.Clear();
+            _queries.Clear();
             RebuildVariables(graph);
             RebuildQueries(graph);
         }
@@ -80,6 +85,8 @@ namespace Neurohard.Playwright.Editor
                 var name = new Label(usage.Name);
                 name.style.width = 110;
                 name.style.overflow = Overflow.Hidden;
+                name.style.textOverflow = TextOverflow.Ellipsis; // UX: Puntos suspensivos si no cabe
+
                 if (usage.IsNeverWritten)
                 {
                     name.style.color = new Color(0.95f, 0.75f, 0.35f);
@@ -118,15 +125,6 @@ namespace Neurohard.Playwright.Editor
                 $"Alcanzables: {result.Reachable.Count}";
         }
 
-        /// <summary>Interpreta el texto como bool, número o cadena, en ese orden.</summary>
-        private void Apply(string name, string raw)
-        {
-            if (bool.TryParse(raw, out var b)) { _vars.Set(name, b); return; }
-            if (int.TryParse(raw, NumberStyles.Integer, CultureInfo.InvariantCulture, out var i)) { _vars.Set(name, i); return; }
-            if (double.TryParse(raw, NumberStyles.Float, CultureInfo.InvariantCulture, out var d)) { _vars.Set(name, d); return; }
-            _vars.Set(name, raw);
-        }
-
         private void RebuildQueries(DialogueGraph graph)
         {
             _queryFields.Clear();
@@ -139,6 +137,7 @@ namespace Neurohard.Playwright.Editor
             }
 
             foreach (var usage in inventory.Values)
+            {
                 foreach (var key in usage.ArgumentSets)
                 {
                     var row = new VisualElement();
@@ -150,6 +149,7 @@ namespace Neurohard.Playwright.Editor
                         var label = new Label(key);
                         label.style.width = 110;
                         label.style.overflow = Overflow.Hidden;
+                        label.style.textOverflow = TextOverflow.Ellipsis; // UX
                         label.tooltip = key;
                         row.Add(label);
 
@@ -158,7 +158,7 @@ namespace Neurohard.Playwright.Editor
                         var k = key;
                         field.RegisterValueChangedCallback(evt =>
                         {
-                            _queries.Set(k, Parse(evt.newValue));
+                            _queries.Set(k, ParsePrimitive(evt.newValue));
                             Changed?.Invoke();
                         });
                         row.Add(field);
@@ -178,18 +178,27 @@ namespace Neurohard.Playwright.Editor
                     }
 
                     _queryFields.Add(row);
-                    _queryFields.Add(row);
-if (!_queries.Has(key))
-    _queries.Set(key, usage.NeedsValue ? (object)"0" : false);                }
+                    // Eliminado el _queryFields.Add(row) duplicado que rompía UI Toolkit
+
+                    if (!_queries.Has(key))
+                        _queries.Set(key, usage.NeedsValue ? (object)"0" : false);
+                }
+            }
         }
 
-        private static object Parse(string raw)
+        // --- Lógica de parseo unificada (DRY) ---
+
+        private void Apply(string name, string raw)
+        {
+            _vars.Set(name, ParsePrimitive(raw));
+        }
+
+        /// <summary>Interpreta el texto como bool, número o cadena, en ese orden.</summary>
+        private static object ParsePrimitive(string raw)
         {
             if (bool.TryParse(raw, out var b)) return b;
-            if (int.TryParse(raw, System.Globalization.NumberStyles.Integer,
-                             System.Globalization.CultureInfo.InvariantCulture, out var i)) return i;
-            if (double.TryParse(raw, System.Globalization.NumberStyles.Float,
-                                System.Globalization.CultureInfo.InvariantCulture, out var d)) return d;
+            if (int.TryParse(raw, NumberStyles.Integer, CultureInfo.InvariantCulture, out var i)) return i;
+            if (double.TryParse(raw, NumberStyles.Float, CultureInfo.InvariantCulture, out var d)) return d;
             return raw;
         }
     }

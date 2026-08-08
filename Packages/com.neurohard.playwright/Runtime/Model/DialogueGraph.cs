@@ -21,7 +21,16 @@ namespace Neurohard.Playwright
         public string Speaker { get; set; }
         public IList<string> Tags { get; } = new List<string>();
 
+        // Restaurado para no romper referencias externas en tu código
         public string ResolveId() => !string.IsNullOrEmpty(LineId) ? LineId : Text;
+
+        // Opcional: Solo para usarlo en la UI del editor y evitar textos gigantes
+        public string GetDisplayTitle()
+        {
+            if (!string.IsNullOrEmpty(LineId)) return LineId;
+            if (string.IsNullOrEmpty(Text)) return "(Vacío)";
+            return Text.Length > 40 ? Text.Substring(0, 37) + "..." : Text;
+        }
     }
 
     /// <summary>Una salida. Con Line, es una opción elegible; sin ella, una transición.</summary>
@@ -81,9 +90,16 @@ namespace Neurohard.Playwright
 
             _nodes.Remove(node);
             _index.Remove(id);
+
             foreach (var n in _nodes)
+            {
+                // Excelente uso del bucle inverso para evitar CollectionModifiedExceptions
                 for (var i = n.Out.Count - 1; i >= 0; i--)
-                    if (n.Out[i].To == id) n.Out.RemoveAt(i);
+                {
+                    if (n.Out[i].To == id)
+                        n.Out.RemoveAt(i);
+                }
+            }
 
             if (Start == id) Start = _nodes.FirstOrDefault()?.Id;
             return true;
@@ -109,7 +125,9 @@ namespace Neurohard.Playwright
             if (Start == oldId) Start = newId;
         }
 
-        public static string NewId(string prefix = "n")
-            => $"{prefix}_{Guid.NewGuid().ToString("N").Substring(0, 6)}";
+// 8 caracteres del GUID. Add() ya rechaza duplicados, así que una colisión
+// sería ruidosa; esto es solo para que los ids sigan siendo legibles.
+public static string NewId(string prefix = "n")
+    => $"{prefix}_{Guid.NewGuid().ToString("N").Substring(0, 8)}";
     }
 }

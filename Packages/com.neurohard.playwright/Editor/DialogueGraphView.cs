@@ -12,11 +12,12 @@ namespace Neurohard.Playwright.Editor
             new Dictionary<string, DialogueNodeView>();
 
         private readonly List<(Edge view, string nodeId, int index)> _edges =
-    new List<(Edge, string, int)>();
+            new List<(Edge, string, int)>();
 
         private static readonly Color PathColor = new Color(0.4f, 0.9f, 0.5f);
 
         private string _activeNodeId;
+        private bool _needsFraming;
 
         /// <summary>Se emite cuando el usuario modifica algo que hay que guardar.</summary>
         public event System.Action Modified;
@@ -30,8 +31,15 @@ namespace Neurohard.Playwright.Editor
             this.AddManipulator(new SelectionDragger());
             this.AddManipulator(new RectangleSelector());
 
-            Insert(0, new GridBackground());
+            // UX: Anclar el grid al tamaño del padre para evitar que desaparezca
+            var grid = new GridBackground();
+            Insert(0, grid);
+            grid.StretchToParentSize();
+
             graphViewChanged = OnGraphViewChanged;
+
+            // Escuchar cambios de geometría para hacer el FrameAll de forma segura
+            RegisterCallback<GeometryChangedEvent>(OnGeometryChanged);
         }
 
         /// <summary>Sin conexiones posibles: el visor no edita.</summary>
@@ -74,7 +82,17 @@ namespace Neurohard.Playwright.Editor
             if (!string.IsNullOrEmpty(graph.Start) && _nodes.TryGetValue(graph.Start, out var start))
                 start.title = "▶ " + start.title;
 
-            schedule.Execute(() => FrameAll()).ExecuteLater(50);
+            // Marcar que necesitamos reencuadrar cuando UI Toolkit termine de calcular tamaños
+            _needsFraming = true;
+        }
+
+        private void OnGeometryChanged(GeometryChangedEvent evt)
+        {
+            if (_needsFraming && layout.width > 0 && layout.height > 0)
+            {
+                _needsFraming = false;
+                schedule.Execute(() => FrameAll());
+            }
         }
 
         /// <summary>Resalta el nodo por el que va el cursor en Play Mode.</summary>
@@ -135,6 +153,9 @@ namespace Neurohard.Playwright.Editor
             edge.edgeControl.outputColor = color;
             edge.edgeControl.edgeWidth = Mathf.RoundToInt(width);
             edge.style.opacity = opacity;
+            
+            // Forzar actualización de la geometría de la curva para que el grosor aplique bien
+            edge.UpdateEdgeControl(); 
             edge.MarkDirtyRepaint();
         }
 
@@ -144,6 +165,8 @@ namespace Neurohard.Playwright.Editor
             edge.edgeControl.outputColor = Color.white;
             edge.edgeControl.edgeWidth = 1;
             edge.style.opacity = 1f;
+            
+            edge.UpdateEdgeControl();
             edge.MarkDirtyRepaint();
         }
 

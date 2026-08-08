@@ -59,6 +59,10 @@ namespace Neurohard.Playwright.Editor
 
         public void SetActive(bool active)
         {
+            // Idealmente, esto debería ser:
+            // if (active) AddToClassList("node-active"); else RemoveFromClassList("node-active");
+            // Y definir los bordes/colores en un archivo .uss
+            
             if (active)
             {
                 style.borderTopWidth = 2;
@@ -91,16 +95,29 @@ namespace Neurohard.Playwright.Editor
                                        Port.Capacity.Single, typeof(bool));
             port.portName = PortLabel(edge, index, nodeType);
             port.userData = edge;
+            
+            // UX: Tooltip con la info completa del puerto por si el nombre está truncado
+            port.tooltip = GeneratePortTooltip(edge, index, nodeType);
+            
             outputContainer.Add(port);
             Outputs.Add(port);
         }
 
         private void AddPreview(GraphLine line)
         {
-            var text = line.Text ?? line.LineId ?? string.Empty;
-            if (text.Length > 70) text = text.Substring(0, 67) + "…";
+            var fullText = line.Text ?? line.LineId ?? string.Empty;
+            var displayText = fullText;
+            
+            if (displayText.Length > 70) 
+                displayText = displayText.Substring(0, 67) + "…";
 
-            var label = new Label(string.IsNullOrEmpty(line.Speaker) ? text : $"{line.Speaker}: {text}");
+            var labelText = string.IsNullOrEmpty(line.Speaker) ? displayText : $"{line.Speaker}: {displayText}";
+            var label = new Label(labelText);
+            
+            // UX: Mostrar el texto completo al pasar el ratón
+            if (fullText.Length > 70)
+                label.tooltip = string.IsNullOrEmpty(line.Speaker) ? fullText : $"{line.Speaker}: {fullText}";
+
             label.style.whiteSpace = WhiteSpace.Normal;
             label.style.maxWidth = 220;
             label.style.marginLeft = 6;
@@ -131,7 +148,8 @@ namespace Neurohard.Playwright.Editor
 
             if (edge.IsOption)
             {
-                var text = edge.Line.Text ?? edge.Line.LineId ?? "(opción)";
+                // Blindado contra null reference si edge.Line no estuviera instanciado
+                var text = edge.Line?.Text ?? edge.Line?.LineId ?? "(opción)";
                 if (text.Length > 28) text = text.Substring(0, 25) + "…";
                 parts.Add(text);
             }
@@ -150,6 +168,25 @@ namespace Neurohard.Playwright.Editor
                 parts.Add($"↯{edge.Reason}");
 
             return parts.Count == 0 ? "→" : string.Join(" ", parts);
+        }
+        
+        // Extrae el texto completo sin truncar para el tooltip
+        private static string GeneratePortTooltip(GraphEdge edge, int index, NodeType nodeType)
+        {
+            var tooltip = "";
+            if (edge.IsOption)
+                tooltip += edge.Line?.Text ?? edge.Line?.LineId ?? "(opción)";
+                
+            if (edge.When != null && !(edge.When is Condition.Always))
+                tooltip += $"\nCondición: {ConditionText.Describe(edge.When)}";
+                
+            if (edge.Then.Count > 0)
+                tooltip += $"\nEventos (Then): {edge.Then.Count}";
+                
+            if (!string.IsNullOrEmpty(edge.Reason))
+                tooltip += $"\nRazón: {edge.Reason}";
+
+            return tooltip.Trim();
         }
 
         private static string TypeLabel(NodeType type) => type switch
