@@ -1,0 +1,113 @@
+/* Paleta clásica: azul cobalto con marco doble blanco. */
+
+.root {
+    position: absolute;
+    left: 0; right: 0; top: 0; bottom: 0;
+    justify-content: flex-end;
+    padding: 24px;
+}
+
+.window {
+    background-color: rgb(16, 32, 108);
+    border-left-width: 3px;
+    border-right-width: 3px;
+    border-top-width: 3px;
+    border-bottom-width: 3px;
+    border-left-color: rgb(248, 248, 248);
+    border-right-color: rgb(248, 248, 248);
+    border-top-color: rgb(248, 248, 248);
+    border-bottom-color: rgb(248, 248, 248);
+    border-top-left-radius: 6px;
+    border-top-right-radius: 6px;
+    border-bottom-left-radius: 6px;
+    border-bottom-right-radius: 6px;
+}
+
+.dialogue-panel {
+    min-height: 140px;
+    padding: 18px 22px;
+    display: none;
+}
+
+.speaker-plate {
+    position: absolute;
+    top: -18px;
+    left: 18px;
+    padding: 2px 14px;
+    background-color: rgb(16, 32, 108);
+}
+
+.speaker {
+    color: rgb(255, 216, 96);
+    font-size: 15px;
+    -unity-font-style: bold;
+    letter-spacing: 1px;
+}
+
+.dialogue-text {
+    color: rgb(248, 248, 248);
+    font-size: 18px;
+    white-space: normal;
+    -unity-text-align: upper-left;
+    letter-spacing: 0.5px;
+}
+
+.advance-arrow {
+    position: absolute;
+    right: 16px;
+    bottom: 8px;
+    color: rgb(255, 216, 96);
+    font-size: 14px;
+    display: none;
+}
+
+/* --- opciones --- */
+
+.options-panel {
+    align-self: flex-end;
+    min-width: 260px;
+    margin-bottom: 12px;
+    padding: 12px 8px;
+    display: none;
+}
+
+.option {
+    flex-direction: row;
+    padding: 3px 10px;
+    background-color: rgba(0, 0, 0, 0);
+    border-left-width: 0;
+    border-right-width: 0;
+    border-top-width: 0;
+    border-bottom-width: 0;
+}
+
+.option-cursor {
+    width: 18px;
+    color: rgb(255, 216, 96);
+    font-size: 16px;
+    opacity: 0;
+}
+
+.option:hover .option-cursor {
+    opacity: 1;
+}
+
+.option-label {
+    color: rgb(248, 248, 248);
+    font-size: 16px;
+}
+
+.option--disabled .option-label {
+    color: rgb(120, 132, 168);
+}
+
+.option--disabled {
+    opacity: 0.7;
+}
+
+.option-hint {
+    color: rgb(120, 132, 168);
+    font-size: 12px;
+    margin-left: 8px;
+    -unity-font-style: italic;
+}

@@ -1,0 +1,15 @@
+<ui:UXML xmlns:ui="UnityEngine.UIElements" editor-extension-mode="False">
+    <Style src="project://database/Assets/Sandbox/UI/DialogueBox.uss?fileID=7433441132597879392&amp;guid=79734008d096b4c408e977c1b120883b&amp;type=3#DialogueBox"/>
+    <ui:VisualElement name="root" class="root">
+        <ui:VisualElement name="options-panel" class="window options-panel">
+            <ui:VisualElement name="options-list" class="options-list"/>
+        </ui:VisualElement>
+        <ui:VisualElement name="dialogue-panel" class="window dialogue-panel">
+            <ui:VisualElement name="speaker-plate" class="window speaker-plate">
+                <ui:Label name="speaker" class="speaker"/>
+            </ui:VisualElement>
+            <ui:Label name="text" class="dialogue-text"/>
+            <ui:Label name="advance-arrow" text="▼" class="advance-arrow"/>
+        </ui:VisualElement>
+    </ui:VisualElement>
+</ui:UXML>
