@@ -19,8 +19,8 @@ namespace Neurohard.Playwright.Editor
             viewDataKey = model.Id;
             title = string.IsNullOrEmpty(model.Title) ? model.Id : model.Title;
 
-            // Solo lectura: ni mover, ni borrar, ni copiar.
-            capabilities &= ~(Capabilities.Deletable | Capabilities.Movable | Capabilities.Copiable);
+            // Movible y seleccionable; borrar y copiar llegarán con la edición estructural.
+            capabilities &= ~(Capabilities.Deletable | Capabilities.Copiable);
 
             Input = InstantiatePort(Orientation.Horizontal, Direction.Input,
                                     Port.Capacity.Multi, typeof(bool));
@@ -41,6 +41,20 @@ namespace Neurohard.Playwright.Editor
             SetPosition(new Rect(model.Editor.X, model.Editor.Y, 0f, 0f));
             RefreshExpandedState();
             RefreshPorts();
+        }
+
+        /// <summary>Copia la posición actual de la vista al modelo. true si cambió.</summary>
+        public bool SyncPositionToModel()
+        {
+            var pos = GetPosition().position;
+
+            if (Mathf.Approximately(Model.Editor.X, pos.x) &&
+                Mathf.Approximately(Model.Editor.Y, pos.y))
+                return false;
+
+            Model.Editor.X = pos.x;
+            Model.Editor.Y = pos.y;
+            return true;
         }
 
         public void SetActive(bool active)
@@ -67,11 +81,15 @@ namespace Neurohard.Playwright.Editor
             }
         }
 
-        private void AddOutputPort(GraphEdge edge)
+        public void SetDimmed(bool dimmed) => style.opacity = dimmed ? 0.3f : 1f;
+
+        // --- construcción -----------------------------------------------------
+
+        private void AddOutputPort(GraphEdge edge, int index, NodeType nodeType)
         {
             var port = InstantiatePort(Orientation.Horizontal, Direction.Output,
                                        Port.Capacity.Single, typeof(bool));
-            port.portName = PortLabel(edge);
+            port.portName = PortLabel(edge, index, nodeType);
             port.userData = edge;
             outputContainer.Add(port);
             Outputs.Add(port);
@@ -101,52 +119,6 @@ namespace Neurohard.Playwright.Editor
             badge.style.marginLeft = 6;
             badge.style.marginTop = 2;
             titleContainer.Add(badge);
-        }
-
-        private static string PortLabel(GraphEdge edge)
-        {
-            var parts = new List<string>();
-
-            if (edge.IsOption)
-            {
-                var text = edge.Line.Text ?? edge.Line.LineId ?? "(opción)";
-                if (text.Length > 28) text = text.Substring(0, 25) + "…";
-                parts.Add(text);
-            }
-
-            if (edge.When != null && !(edge.When is Condition.Always))
-                parts.Add($"[{ConditionText.Describe(edge.When)}]");
-
-            if (edge.Then.Count > 0)
-                parts.Add($"⚡{edge.Then.Count}");
-
-            return parts.Count == 0 ? "→" : string.Join(" ", parts);
-        }
-
-        private static string TypeLabel(NodeType type) => type switch
-        {
-            NodeType.Line => "línea",
-            NodeType.Choice => "opciones",
-            _ => "hub"
-        };
-
-        private static Color TypeColor(NodeType type) => type switch
-        {
-            NodeType.Line => new Color(0.45f, 0.75f, 0.95f),
-            NodeType.Choice => new Color(0.95f, 0.75f, 0.35f),
-            _ => new Color(0.65f, 0.65f, 0.65f)
-        };
-
-        public void SetDimmed(bool dimmed) => style.opacity = dimmed ? 0.3f : 1f;
-
-        private void AddOutputPort(GraphEdge edge, int index, NodeType nodeType)
-        {
-            var port = InstantiatePort(Orientation.Horizontal, Direction.Output,
-                                       Port.Capacity.Single, typeof(bool));
-            port.portName = PortLabel(edge, index, nodeType);
-            port.userData = edge;
-            outputContainer.Add(port);
-            Outputs.Add(port);
         }
 
         private static string PortLabel(GraphEdge edge, int index, NodeType nodeType)
@@ -179,5 +151,19 @@ namespace Neurohard.Playwright.Editor
 
             return parts.Count == 0 ? "→" : string.Join(" ", parts);
         }
+
+        private static string TypeLabel(NodeType type) => type switch
+        {
+            NodeType.Line => "línea",
+            NodeType.Choice => "opciones",
+            _ => "hub"
+        };
+
+        private static Color TypeColor(NodeType type) => type switch
+        {
+            NodeType.Line => new Color(0.45f, 0.75f, 0.95f),
+            NodeType.Choice => new Color(0.95f, 0.75f, 0.35f),
+            _ => new Color(0.65f, 0.65f, 0.65f)
+        };
     }
 }

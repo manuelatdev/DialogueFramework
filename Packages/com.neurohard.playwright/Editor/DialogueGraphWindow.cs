@@ -15,6 +15,7 @@ namespace Neurohard.Playwright.Editor
         private SimulationPanel _panel;
         private ListView _issues;
         private Label _status;
+        private bool _dirty;
 
         [MenuItem("Window/Neurohard/Visor de grafos")]
         public static void ShowWindow() => GetWindow<DialogueGraphWindow>().Initialize(null);
@@ -31,9 +32,9 @@ namespace Neurohard.Playwright.Editor
 
         private void Initialize(DialogueGraphAsset asset)
         {
-            titleContent = new GUIContent("Grafo de diálogo");
             if (asset != null) _asset = asset;
             BuildUi();
+            UpdateTitle();
             Reload();
         }
 
@@ -52,6 +53,7 @@ namespace Neurohard.Playwright.Editor
 
             toolbar.Add(new Button(Reload) { text = "Recargar" });
             toolbar.Add(new Button(() => _view.FrameAll()) { text = "Encuadrar" });
+            toolbar.Add(new Button(Save) { text = "Guardar" });
 
             _status = new Label(" ");
             _status.style.marginLeft = 10;
@@ -70,6 +72,7 @@ namespace Neurohard.Playwright.Editor
 
             _view = new DialogueGraphView();
             _view.style.flexGrow = 1;
+            _view.Modified += MarkDirty;
             body.Add(_view);
 
             _panel = new SimulationPanel();
@@ -77,6 +80,15 @@ namespace Neurohard.Playwright.Editor
             body.Add(_panel);
 
             rootVisualElement.Add(body);
+
+            rootVisualElement.RegisterCallback<KeyDownEvent>(evt =>
+            {
+                if (evt.keyCode == KeyCode.S && (evt.commandKey || evt.ctrlKey))
+                {
+                    Save();
+                    evt.StopPropagation();
+                }
+            });
         }
 
         private void BuildIssuesPanel(VisualElement parent)
@@ -112,6 +124,11 @@ namespace Neurohard.Playwright.Editor
         private void Reload()
         {
             if (_view == null) return;
+
+            if (!ConfirmDiscard("Recargar los descartará.")) return;
+
+            _dirty = false;
+            UpdateTitle();
 
             if (_asset == null)
             {
@@ -158,9 +175,10 @@ namespace Neurohard.Playwright.Editor
 
         private void RunSimulation()
         {
-            if (EditorApplication.isPlaying) { _view.ApplySimulation(null); return; }
+            if (_view == null) return;
 
-            if (_asset == null || _view == null) return;
+            if (EditorApplication.isPlaying) { _view.ApplySimulation(null); return; }
+            if (_asset == null) return;
 
             try
             {
@@ -171,13 +189,55 @@ namespace Neurohard.Playwright.Editor
             catch (GraphFormatException) { /* el estado ya lo reporta Reload */ }
         }
 
+        // --- guardado ---------------------------------------------------------
+
+        private void MarkDirty()
+        {
+            if (_dirty) return;
+            _dirty = true;
+            UpdateTitle();
+        }
+
+        private void Save()
+        {
+            if (_asset == null || !_dirty) return;
+
+            try
+            {
+                _asset.Save();
+                _dirty = false;
+                UpdateTitle();
+                _status.text = $"{_asset.name} guardado.";
+            }
+            catch (System.Exception ex)
+            {
+                _status.text = $"No se pudo guardar: {ex.Message}";
+            }
+        }
+
+        private void UpdateTitle()
+        {
+            var nombre = _asset != null ? _asset.name : "Grafo de diálogo";
+            titleContent = new GUIContent(_dirty ? nombre + " *" : nombre);
+        }
+
+        /// <summary>Pregunta antes de perder cambios. true si se puede continuar.</summary>
+        private bool ConfirmDiscard(string consecuencia)
+            => !_dirty || EditorUtility.DisplayDialog(
+                "Cambios sin guardar",
+                $"«{(_asset != null ? _asset.name : "El grafo")}» tiene cambios sin guardar. {consecuencia}",
+                "Descartar", "Cancelar");
+
+        // --- ciclo de vida ----------------------------------------------------
+
         private void OnSelectionChange()
         {
-            if (Selection.activeObject is DialogueGraphAsset asset && asset != _asset)
-            {
-                _asset = asset;
-                Reload();
-            }
+            if (!(Selection.activeObject is DialogueGraphAsset asset) || asset == _asset) return;
+            if (!ConfirmDiscard("Cambiar de grafo los descartará.")) return;
+
+            _dirty = false;
+            _asset = asset;
+            Reload();
         }
 
         private void OnEnable()
@@ -196,6 +256,7 @@ namespace Neurohard.Playwright.Editor
         {
             if (state == PlayModeStateChange.EnteredEditMode) RunSimulation();
         }
+
         private void PollActiveNode()
         {
             if (_view == null) return;

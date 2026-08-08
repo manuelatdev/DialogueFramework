@@ -18,16 +18,20 @@ namespace Neurohard.Playwright.Editor
 
         private string _activeNodeId;
 
+        /// <summary>Se emite cuando el usuario modifica algo que hay que guardar.</summary>
+        public event System.Action Modified;
+
         public DialogueGraphView()
         {
             style.flexGrow = 1;
 
             SetupZoom(ContentZoomer.DefaultMinScale, ContentZoomer.DefaultMaxScale);
-            this.AddManipulator(new ContentDragger());      // pan
-            this.AddManipulator(new RectangleSelector());   // selección
-            // Sin SelectionDragger: los nodos no se mueven (el visor es de solo lectura).
+            this.AddManipulator(new ContentDragger());
+            this.AddManipulator(new SelectionDragger());
+            this.AddManipulator(new RectangleSelector());
 
             Insert(0, new GridBackground());
+            graphViewChanged = OnGraphViewChanged;
         }
 
         /// <summary>Sin conexiones posibles: el visor no edita.</summary>
@@ -150,6 +154,19 @@ namespace Neurohard.Playwright.Editor
             ClearSelection();
             AddToSelection(node);
             FrameSelection();
+        }
+
+        private GraphViewChange OnGraphViewChanged(GraphViewChange change)
+        {
+            if (change.movedElements == null) return change;
+
+            var cambiado = false;
+            foreach (var element in change.movedElements)
+                if (element is DialogueNodeView node && node.SyncPositionToModel())
+                    cambiado = true;
+
+            if (cambiado) Modified?.Invoke();
+            return change;
         }
     }
 }

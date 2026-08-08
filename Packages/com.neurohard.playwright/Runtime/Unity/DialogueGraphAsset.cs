@@ -61,5 +61,19 @@ namespace Neurohard.Playwright.Unity
 #endif
             return source;
         }
+
+#if UNITY_EDITOR
+        /// <summary>Serializa el grafo en memoria y lo escribe al TextAsset en disco.</summary>
+        public void Save()
+        {
+            if (json == null)
+                throw new System.InvalidOperationException(
+                    $"El asset '{name}' no tiene TextAsset asignado; no hay dónde guardar.");
+
+            var path = UnityEditor.AssetDatabase.GetAssetPath(json);
+            System.IO.File.WriteAllText(path, GraphWriter.ToJson(Graph));
+            UnityEditor.AssetDatabase.ImportAsset(path);
+        }
+#endif
     }
 }
