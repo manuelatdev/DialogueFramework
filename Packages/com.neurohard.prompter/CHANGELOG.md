@@ -43,3 +43,9 @@ Primera versión funcional: reproduce un guion lineal de punta a punta.
   parpadeos en la caja de diálogo.
 - La limpieza final se ejecuta con `CancellationToken.None`: si la sesión se
   cancela, la UI debe cerrarse igualmente.
+
+  ### Changed
+- La clase `Prompter` pasa a llamarse `DialoguePlayer`. Un tipo con el mismo
+  nombre que su namespace padre (`Neurohard.Prompter`) provoca el error
+  "'Prompter' is a namespace but is used like a type" en cualquier ensamblado
+  externo, incluido Playwright. El paquete sigue llamándose Prompter.

@@ -6,12 +6,12 @@ using System.Threading.Tasks;
 namespace Neurohard.Prompter
 {
     /// <summary>Reproductor de diálogo. Reutilizable; una sesión activa a la vez.</summary>
-    public sealed class Prompter
+    public sealed class DialoguePlayer
     {
         private readonly PrompterOptions _options;
         private int _busy;
 
-        public Prompter(PrompterOptions options)
+        public DialoguePlayer(PrompterOptions options)
         {
             if (options == null) throw new ArgumentNullException(nameof(options));
             _options = options.Materialize();
@@ -31,7 +31,7 @@ namespace Neurohard.Prompter
 
             if (Interlocked.CompareExchange(ref _busy, 1, 0) == 1)
                 throw new InvalidOperationException(
-                    "Prompter ya está reproduciendo una conversación. Espera a que termine, " +
+                    "Ya hay una conversación en curso. Espera a que termine, " +
                     "cancélala con su CancellationToken, o usa otra instancia. " +
                     "La cola con prioridades llegará en una versión posterior.");
 

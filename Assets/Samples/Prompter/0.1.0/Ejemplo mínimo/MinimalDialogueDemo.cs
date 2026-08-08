@@ -10,7 +10,7 @@ namespace Neurohard.Prompter.Samples
 
         private async void Start()
         {
-            var prompter = new Prompter(new PrompterOptions
+            var prompter = new DialoguePlayer(new PrompterOptions
             {
                 Presenters = { new ConsolePresenter() },
                 Input = gameObject.AddComponent<ImguiDialogueInput>(),
