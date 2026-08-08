@@ -136,5 +136,7 @@ namespace Neurohard.Playwright.Editor
             NodeType.Choice => new Color(0.95f, 0.75f, 0.35f),
             _ => new Color(0.65f, 0.65f, 0.65f)
         };
+
+        public void SetDimmed(bool dimmed) => style.opacity = dimmed ? 0.3f : 1f;
     }
 }

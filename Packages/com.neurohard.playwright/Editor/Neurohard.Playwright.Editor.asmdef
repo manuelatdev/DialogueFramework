@@ -1,6 +1,10 @@
 {
   "name": "Neurohard.Playwright.Editor",
   "rootNamespace": "Neurohard.Playwright.Editor",
-  "references": [ "Neurohard.Playwright", "Neurohard.Playwright.Unity" ],
+  "references": [
+    "Neurohard.Playwright",
+    "Neurohard.Playwright.Unity",
+    "Neurohard.Prompter.Core"
+  ],
   "includePlatforms": [ "Editor" ]
 }
