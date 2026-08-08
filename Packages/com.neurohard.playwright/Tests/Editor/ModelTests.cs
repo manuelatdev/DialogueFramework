@@ -1,3 +1,5 @@
+using System.Threading;
+using System.Threading.Tasks;
 using NUnit.Framework;
 using Neurohard.Prompter;
 
@@ -90,45 +92,75 @@ namespace Neurohard.Playwright.Tests
         }
 
         [Test]
-public void CompararVariableContraVariable()
-{
-    var v = new InMemoryVariableStorage();
-    v.Set("oro", 10);
-    v.Set("precio", 3);
+        public void CompararVariableContraVariable()
+        {
+            var v = new InMemoryVariableStorage();
+            v.Set("oro", 10);
+            v.Set("precio", 3);
 
-    var c = new Condition.Compare("oro", ComparisonOp.GreaterOrEqual, new VariableRef("precio"));
-    Assert.IsTrue(c.Evaluate(v));
+            var c = new Condition.Compare("oro", ComparisonOp.GreaterOrEqual, new VariableRef("precio"));
+            Assert.IsTrue(c.Evaluate(v));
 
-    v.Set("precio", 50);
-    Assert.IsFalse(c.Evaluate(v));
-}
+            v.Set("precio", 50);
+            Assert.IsFalse(c.Evaluate(v));
+        }
 
-[Test]
-public void RestarUnaCantidadReferenciada()
-{
-    var v = new InMemoryVariableStorage();
-    v.Set("oro", 10);
-    v.Set("precio", 3);
+        [Test]
+        public void RestarUnaCantidadReferenciada()
+        {
+            var v = new InMemoryVariableStorage();
+            v.Set("oro", 10);
+            v.Set("precio", 3);
 
-    new Effect.Assign("oro", AssignOp.Subtract, new VariableRef("precio")).Apply(v);
+            new Effect.Assign("oro", AssignOp.Subtract, new VariableRef("precio")).Apply(v);
 
-    Assert.IsTrue(v.TryGet<int>("oro", out var oro));
-    Assert.AreEqual(7, oro);
-}
+            Assert.IsTrue(v.TryGet<int>("oro", out var oro));
+            Assert.AreEqual(7, oro);
+        }
 
-[Test]
-public void ElInventarioCuentaLaVariableReferenciada()
-{
-    var g = new DialogueGraph { Start = "a" };
-    var a = g.Add(new GraphNode { Id = "a", Type = NodeType.Line, Line = new GraphLine { Text = "Hola" } });
-    a.Out.Add(new GraphEdge {
-        To = "a",
-        When = new Condition.Compare("oro", ComparisonOp.GreaterOrEqual, new VariableRef("precio"))
-    });
+        [Test]
+        public void ElInventarioCuentaLaVariableReferenciada()
+        {
+            var g = new DialogueGraph { Start = "a" };
+            var a = g.Add(new GraphNode { Id = "a", Type = NodeType.Line, Line = new GraphLine { Text = "Hola" } });
+            a.Out.Add(new GraphEdge
+            {
+                To = "a",
+                When = new Condition.Compare("oro", ComparisonOp.GreaterOrEqual, new VariableRef("precio"))
+            });
 
-    var inventory = VariableInventory.Collect(g);
-    Assert.IsTrue(inventory.ContainsKey("precio"));
-    Assert.IsFalse(inventory["precio"].IsNeverRead);
-}
+            var inventory = VariableInventory.Collect(g);
+            Assert.IsTrue(inventory.ContainsKey("precio"));
+            Assert.IsFalse(inventory["precio"].IsNeverRead);
+        }
+
+        [Test]
+        public async Task UnaOpcionBloqueada_LlevaSuMotivo()
+        {
+            var g = new DialogueGraph { Start = "menu" };
+            var menu = g.Add(new GraphNode { Id = "menu", Type = NodeType.Choice });
+            menu.Out.Add(new GraphEdge
+            {
+                To = "menu",
+                OptionId = "cara",
+                Line = new GraphLine { Text = "Pagar" },
+                When = new Condition.Compare("oro", ComparisonOp.GreaterOrEqual, 99),
+                Reason = "no llevas suficiente"
+            });
+            menu.Out.Add(new GraphEdge
+            {
+                To = "menu",
+                OptionId = "salir",
+                Line = new GraphLine { Text = "Dejarlo" }
+            });
+
+            var source = new GraphDialogueSource(g);
+            await source.StartAsync(new DialogueContext(new InMemoryVariableStorage()), CancellationToken.None);
+            var step = (DialogueStep.Options)await source.AdvanceAsync(CancellationToken.None);
+
+            Assert.IsFalse(step.Choices[0].IsAvailable);
+            Assert.AreEqual("no llevas suficiente", step.Choices[0].UnavailableReason);
+            Assert.IsNull(step.Choices[1].UnavailableReason);
+        }
     }
 }

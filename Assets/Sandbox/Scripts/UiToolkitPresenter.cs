@@ -10,7 +10,10 @@ using Neurohard.Prompter.Unity;
 public sealed class UiToolkitPresenter : MonoBehaviour, IDialoguePresenter
 {
     [SerializeField, Range(5f, 120f)] private float charactersPerSecond = 45f;
-    
+
+    [Header("Opciones bloqueadas")]
+    [SerializeField] private bool mostrarBloqueadas = true;
+    [SerializeField] private bool mostrarMotivo = true;
     private VisualElement _dialoguePanel;
     private VisualElement _optionsPanel;
     private VisualElement _optionsList;
@@ -66,7 +69,10 @@ public sealed class UiToolkitPresenter : MonoBehaviour, IDialoguePresenter
         _optionsList.Clear();
 
         foreach (var option in options)
+        {
+            if (!option.IsAvailable && !mostrarBloqueadas) continue;
             _optionsList.Add(BuildOption(option));
+        }
 
         _optionsPanel.style.display = DisplayStyle.Flex;
         _arrow.style.display = DisplayStyle.None;
@@ -99,10 +105,9 @@ public sealed class UiToolkitPresenter : MonoBehaviour, IDialoguePresenter
         label.AddToClassList("option-label");
         row.Add(label);
 
-        // Los tags de la línea sirven de pista para opciones bloqueadas.
-        if (!option.IsAvailable && option.Line.Tags.Count > 0)
+        if (!option.IsAvailable && mostrarMotivo && !string.IsNullOrEmpty(option.UnavailableReason))
         {
-            var hint = new Label($"({option.Line.Tags[0]})");
+            var hint = new Label($"({option.UnavailableReason})");
             hint.AddToClassList("option-hint");
             row.Add(hint);
         }

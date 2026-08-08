@@ -54,6 +54,7 @@ namespace Neurohard.Playwright.Io
                 .Set("to", edge.To)
                 .Set("id", edge.OptionId)
                 .Set("line", edge.Line != null ? Line(edge.Line) : null)
+                .Set("reason", edge.Reason)
                 .SetIf(edge.HideWhenUnavailable, "hideWhenUnavailable", JsonOut.Bool(true));
 
             if (edge.When != null && !(edge.When is Condition.Always))

@@ -90,7 +90,7 @@ namespace Neurohard.Prompter
         {
             var prompt = step.Prompt != null ? Resolve(step.Prompt) : null;
             var resolved = step.Choices
-                .Select(c => new ResolvedOption(c.OptionId, Resolve(c.Line), c.IsAvailable))
+                .Select(c => new ResolvedOption(c.OptionId, Resolve(c.Line), c.IsAvailable, c.UnavailableReason))
                 .ToArray();
 
             if (!resolved.Any(o => o.IsAvailable))

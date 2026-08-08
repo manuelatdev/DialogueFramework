@@ -31,6 +31,8 @@ namespace Neurohard.Playwright
         public GraphLine Line { get; set; }
         public Condition When { get; set; } = Condition.Always.Instance;
         public IList<Effect> Then { get; } = new List<Effect>();
+        /// <summary>Motivo mostrable cuando la condición no se cumple.</summary>
+        public string Reason { get; set; }
         public bool HideWhenUnavailable { get; set; }
 
         public string OptionId { get; set; }

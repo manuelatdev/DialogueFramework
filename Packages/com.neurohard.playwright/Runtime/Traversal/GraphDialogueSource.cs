@@ -194,7 +194,8 @@ namespace Neurohard.Playwright
                         $"OptionId duplicado '{id}' en el nodo '{node.Id}'.");
 
                 map[id] = edge;
-                choices.Add(new DialogueOption(id, ToDialogueLine(edge.Line, node.Id), available));
+                choices.Add(new DialogueOption(id, ToDialogueLine(edge.Line, node.Id), available,
+                                               available ? null : edge.Reason));
             }
 
             if (choices.Count == 0)

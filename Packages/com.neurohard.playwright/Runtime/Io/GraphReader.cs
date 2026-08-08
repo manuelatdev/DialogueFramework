@@ -128,6 +128,7 @@ namespace Neurohard.Playwright.Io
             {
                 To = json.Has("to") ? json["to"].AsString($"El destino de una salida de '{nodeId}'") : null,
                 OptionId = json.Has("id") ? json["id"].AsString($"El id de opción en '{nodeId}'") : null,
+                Reason = json.Has("reason") ? json["reason"].AsString($"El motivo de una opción de '{nodeId}'") : null,
                 HideWhenUnavailable = json.Has("hideWhenUnavailable") &&
                                       json["hideWhenUnavailable"].AsBool("hideWhenUnavailable")
             };

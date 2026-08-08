@@ -109,11 +109,9 @@
                     "to": "n_salvoconducto",
                     "id": "salvoconducto",
                     "line": {
-                        "text": "Llevo salvoconducto del preboste.",
-                        "tags": [
-                            "necesitas el salvoconducto"
-                        ]
+                        "text": "Llevo salvoconducto del preboste."
                     },
+                    "reason": "necesitas el salvoconducto",
                     "when": {
                         "var": "tiene_salvoconducto",
                         "op": "==",
@@ -299,11 +297,9 @@
                     "to": "n_pago_hecho",
                     "id": "pagar",
                     "line": {
-                        "text": "Toma tu peaje.",
-                        "tags": [
-                            "no llevas suficiente"
-                        ]
+                        "text": "Toma tu peaje."
                     },
+                    "reason": "no llevas suficiente",
                     "when": {
                         "var": "oro",
                         "op": ">=",
@@ -328,19 +324,7 @@
                     ]
                 },
                 {
-                    "to": "n_sin_dinero_mentira",
-                    "id": "sin_dinero_mentira",
-                    "line": {
-                        "text": "No llevo tanto encima."
-                    },
-                    "when": {
-                        "var": "mentiste",
-                        "op": "==",
-                        "value": true
-                    }
-                },
-                {
-                    "to": "n_sin_dinero",
+                    "to": "n_hub_sin_dinero",
                     "id": "sin_dinero",
                     "line": {
                         "text": "No llevo tanto encima."
@@ -369,6 +353,28 @@
             "out": [
                 {
                     "to": "n_cruce_libre"
+                }
+            ]
+        },
+        {
+            "id": "n_hub_sin_dinero",
+            "title": "¿Mintió sobre el preboste?",
+            "type": "hub",
+            "editor": {
+                "x": 2100,
+                "y": -60
+            },
+            "out": [
+                {
+                    "to": "n_sin_dinero_mentira",
+                    "when": {
+                        "var": "mentiste",
+                        "op": "==",
+                        "value": true
+                    }
+                },
+                {
+                    "to": "n_sin_dinero"
                 }
             ]
         },
@@ -875,11 +881,9 @@
                     "to": "n_reconciliacion",
                     "id": "disculpa",
                     "line": {
-                        "text": "Vengo a disculparme.",
-                        "tags": [
-                            "no con esa reputación"
-                        ]
+                        "text": "Vengo a disculparme."
                     },
+                    "reason": "no con esa reputación",
                     "when": {
                         "var": "confianza",
                         "op": ">=",

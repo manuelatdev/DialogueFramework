@@ -24,12 +24,15 @@ namespace Neurohard.Prompter
         public string OptionId { get; }
         public ResolvedLine Line { get; }
         public bool IsAvailable { get; }
+        public string UnavailableReason { get; }
 
-        public ResolvedOption(string optionId, ResolvedLine line, bool isAvailable = true)
+        public ResolvedOption(string optionId, ResolvedLine line,
+                              bool isAvailable = true, string unavailableReason = null)
         {
             OptionId = optionId;
             Line = line ?? throw new ArgumentNullException(nameof(line));
             IsAvailable = isAvailable;
+            UnavailableReason = isAvailable ? null : unavailableReason;
         }
     }
 }
