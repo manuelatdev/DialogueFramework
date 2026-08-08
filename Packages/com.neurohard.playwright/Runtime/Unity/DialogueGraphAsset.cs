@@ -40,6 +40,18 @@ namespace Neurohard.Playwright.Unity
         /// <summary>Descarta la caché. Útil tras editar el JSON en caliente.</summary>
         public void Invalidate() => _cached = null;
 
-        public GraphDialogueSource CreateSource() => new GraphDialogueSource(Graph);
+#if UNITY_EDITOR
+        [System.NonSerialized] private GraphDialogueSource _lastSource;
+        /// <summary>Última fuente creada desde este asset. Solo para depuración.</summary>
+        public GraphDialogueSource ActiveSource => _lastSource;
+#endif
+        public GraphDialogueSource CreateSource()
+        {
+            var source = new GraphDialogueSource(Graph);
+#if UNITY_EDITOR
+            _lastSource = source;
+#endif
+            return source;
+        }
     }
 }
