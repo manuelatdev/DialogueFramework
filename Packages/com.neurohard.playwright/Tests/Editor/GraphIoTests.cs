@@ -144,6 +144,30 @@ namespace Neurohard.Playwright.Tests
             Assert.AreEqual("precio", ((VariableRef)when.Value).Name);
             Assert.AreEqual(json1, GraphWriter.ToJson(reloaded));
         }
+
+        [Test]
+public void ElEscritorCubreTodasLasVariantesDeCondicion()
+{
+    Condition[] todas = {
+        Condition.Always.Instance,
+        new Condition.Compare("a", ComparisonOp.Equal, 1),
+        new Condition.All(new Condition[] { Condition.Always.Instance }),
+        new Condition.Any(new Condition[] { Condition.Always.Instance }),
+        new Condition.Not(Condition.Always.Instance),
+        new Condition.Query("puede_comprar", new[] { "cuerda" })
+    };
+
+    foreach (var c in todas)
+    {
+        var g = new DialogueGraph { Start = "a" };
+        var a = g.Add(new GraphNode { Id = "a", Type = NodeType.Line, Line = new GraphLine { Text = "x" } });
+        a.Out.Add(new GraphEdge { To = "a", When = c });
+
+        var json = GraphWriter.ToJson(g);
+        Assert.AreEqual(json, GraphWriter.ToJson(GraphReader.FromJson(json)),
+            $"El round-trip falla para {c.GetType().Name}");
+    }
+}
     }
 
 

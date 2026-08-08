@@ -12,6 +12,8 @@ namespace Neurohard.Prompter
         public ILineProvider LineProvider { get; set; }
         public IVariableStorage Variables { get; set; }
         public ICommandDispatcher Commands { get; set; }
+        public IQueryResolver Queries { get; set; }
+
 
         /// <summary>Destino de avisos y errores. Core no conoce UnityEngine.</summary>
         public Action<string> Log { get; set; }
@@ -28,6 +30,7 @@ namespace Neurohard.Prompter
             LineProvider ??= new PassthroughLineProvider();
             Variables ??= new InMemoryVariableStorage();
             Commands ??= new LoggingCommandDispatcher(Log);
+            Queries ??= new NoQueryResolver(Log);
             return this;
         }
     }

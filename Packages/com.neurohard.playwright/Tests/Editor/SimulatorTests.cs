@@ -5,12 +5,12 @@ namespace Neurohard.Playwright.Tests
 {
     public class SimulatorTests
     {
-        private static IVariableStorage Vars(int oro)
-        {
-            var v = new InMemoryVariableStorage();
-            v.Set("oro", oro);
-            return v;
-        }
+private static EvaluationContext Vars(int oro)
+{
+    var v = new InMemoryVariableStorage();
+    v.Set("oro", oro);
+    return new EvaluationContext(v);
+}
 
         [Test]
         public void ConOro_LaAristaCondicionalEsTransitable()

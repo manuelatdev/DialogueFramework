@@ -23,6 +23,7 @@ namespace Neurohard.Prompter.Unity
         public IVariableStorage Variables { get; set; }
         public ILineProvider LineProvider { get; set; }
         public ICommandDispatcher Commands { get; set; }
+        public IQueryResolver Queries { get; set; }
         public IDialogueInput Input { get; set; }
 
         public bool IsPlaying => _player?.IsPlaying ?? false;
@@ -74,6 +75,7 @@ namespace Neurohard.Prompter.Unity
                 Variables = Variables,
                 LineProvider = LineProvider,
                 Commands = Commands,
+                Queries = Queries,
                 Input = Input,
                 Log = UnityLog
             };

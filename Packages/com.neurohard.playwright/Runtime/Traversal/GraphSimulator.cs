@@ -46,19 +46,19 @@ namespace Neurohard.Playwright
     {
         private const int MaxPathLength = 200;
 
-        public static SimulationResult Simulate(DialogueGraph graph, IVariableStorage vars)
+        public static SimulationResult Simulate(DialogueGraph graph, EvaluationContext ctx)
         {
             var result = new SimulationResult();
             if (graph == null) return result;
 
-            EvaluateAllEdges(graph, vars, result);
+            EvaluateAllEdges(graph, ctx, result);
             ComputeReachable(graph, result);
-            TracePath(graph, vars, result);
+            TracePath(graph, result);
 
             return result;
         }
 
-        private static void EvaluateAllEdges(DialogueGraph graph, IVariableStorage vars, SimulationResult result)
+        private static void EvaluateAllEdges(DialogueGraph graph, EvaluationContext ctx, SimulationResult result)
         {
             foreach (var node in graph.Nodes)
                 for (var i = 0; i < node.Out.Count; i++)
@@ -71,7 +71,7 @@ namespace Neurohard.Playwright
                         continue;
                     }
 
-                    var passable = edge.When == null || edge.When.Evaluate(vars);
+                    var passable = edge.When == null || edge.When.Evaluate(ctx);
 
                     result.Edges[(node.Id, i)] =
                         passable ? EdgeState.Passable
@@ -105,7 +105,7 @@ namespace Neurohard.Playwright
             }
         }
 
-        private static void TracePath(DialogueGraph graph, IVariableStorage vars, SimulationResult result)
+        private static void TracePath(DialogueGraph graph, SimulationResult result)
         {
             var current = graph.Find(graph.Start);
             var visited = new HashSet<string>();

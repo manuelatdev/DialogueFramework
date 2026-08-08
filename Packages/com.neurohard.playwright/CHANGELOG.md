@@ -1,5 +1,91 @@
 # Changelog
 
+Formato basado en [Keep a Changelog](https://keepachangelog.com/es-ES/1.1.0/).
+Este proyecto sigue [Versionado Semántico](https://semver.org/lang/es/).
+
+## [0.4.0]
+
+El grafo puede preguntar al juego.
+
+### Added
+- Condiciones de tipo consulta: `{ "query": "puede_comprar", "args": ["cuerda"] }`.
+  Sin `op` ni `value` significan "la consulta devuelve verdadero"; con ellos se
+  comparan como cualquier otro valor.
+- `EvaluationContext`, que agrupa el almacén de variables y el resolver de
+  consultas.
+
+### Changed
+- `Condition.Evaluate` recibe un `EvaluationContext` en lugar de un
+  `IVariableStorage`. Afecta a las seis variantes, al simulador y al visor.
+- `GraphSimulator.Simulate` recibe también el contexto.
+
+### Limitaciones conocidas
+- **El visor no puede simular consultas.** Sin un juego detrás, `NoQueryResolver`
+  responde falso a todo y las opciones que dependen de consultas aparecen siempre
+  bloqueadas. Pendiente decidir entre un panel de consultas simuladas o permitir
+  enchufar un resolver del proyecto.
+
+### Notas de diseño
+- El inventario y la economía no son asunto del sistema de diálogos. Modelarlos
+  con variables planas obligaba a duplicar el procedimiento de compra por cada
+  artículo, porque el destino de una asignación no puede ser dinámico. Escribir
+  el grafo del mercader lo dejó en evidencia: 8 de 23 nodos eran copia-pega.
+  La solución no fue enriquecer el lenguaje del grafo, sino sacar esa
+  responsabilidad al juego. Tras el cambio: 15 nodos y cero duplicación.
+- Criterio: si un dato existe aunque no haya conversación en marcha (inventario,
+  quests, clima), es del juego y se accede por consulta. Si solo existe porque
+  hubo conversación (`mentiste`, `veces_hablado`), es del diálogo y vive en
+  variables.
+
+## [0.3.0]
+
+### Added
+- Las aristas admiten `reason`: el motivo mostrable cuando una opción está
+  bloqueada. Viaja hasta `ResolvedOption.UnavailableReason`.
+- El validador avisa cuando dos opciones de un mismo `choice` comparten texto:
+  suele indicar que debería ser una sola opción seguida de un hub.
+- `DialogueGraphAsset.CreateSource` valida el grafo en el editor y reporta los
+  errores antes de empezar la conversación, no a mitad.
+- El visor numera los puertos de salida en nodos `line` y `hub`, donde el orden
+  de las aristas es semántico, y marca las incondicionales como `[siempre]`.
+
+### Changed
+- Los `tags` de una línea dejan de usarse como motivo de bloqueo.
+
+## [0.2.0]
+
+### Added
+- Referencias a variables como valor: `{ "$var": "precio" }` en el `value` de una
+  condición o de un efecto. Permite parametrizar un mismo nodo en lugar de
+  duplicarlo por cada valor posible.
+- `GraphSimulator`: evalúa un grafo contra un estado de variables sin
+  reproducirlo, marcando aristas transitables, bloqueadas y ocultas, y trazando
+  el camino determinista hasta la primera decisión del jugador.
+- `VariableInventory`: lista las variables que usa un grafo y dónde se leen y se
+  escriben. Detecta erratas de nombre, que tras el cambio de semántica de las
+  variables sin definir pasan a ser silenciosas.
+- Visor de grafos con GraphView: solo lectura, con panel de simulación,
+  incidencias clicables y resaltado del nodo activo en Play Mode.
+- `Runtime/Unity`: `DialogueGraphAsset`, envoltorio delgado sobre un `TextAsset`.
+
+### Changed
+- Una variable sin definir se compara como 0 frente a valores numéricos, y como
+  cadena vacía frente a cadenas. Antes cualquier comparación con una variable
+  inexistente daba false. Esto permite escribir `contador == 0` en lugar de
+  `{any: [{!exists}, {== 0}]}`.
+- `exists` / `!exists` pasan a ser la única forma de distinguir "sin definir"
+  de "cero".
+- `GraphWriter` se reescribe sin estado: construye un árbol de salida
+  (`JsonObj`/`JsonArr`) y lo renderiza, en lugar de emitir comas y sangrado con
+  una máquina de estados. La versión anterior produjo dos bugs de comas en dos
+  iteraciones.
+
+### Fixed
+- `VariableMath.Add` degradaba a int cualquier resultado sin decimales,
+  cambiando el tipo de variables double a mitad de partida.
+- `VariableInventory` marcaba como "nunca leída" una variable usada solo en
+  operaciones `+=` o `-=`.
+
 ## [0.1.0] - 2026-08-08
 
 Motor de grafos de conversación como `IDialogueSource` para Prompter.
@@ -23,6 +109,9 @@ Motor de grafos de conversación como `IDialogueSource` para Prompter.
 - `nodes` es un array y cada nodo lleva `editor: {x, y}`: el formato es
   canónico y el futuro editor gráfico será una vista sobre él.
 - El escritor omite los valores por defecto para mantener los diffs limpios.
+- El guardia de transiciones es **por paso**, no acumulativo: cuenta los saltos
+  automáticos antes de producir un paso visible, así que la interacción
+  prolongada del jugador nunca lo agota.
 
 ### Limitaciones conocidas
 - El parser acepta comentarios `//`, pero el escritor no los conserva.
@@ -30,20 +119,3 @@ Motor de grafos de conversación como `IDialogueSource` para Prompter.
   combinadas con all/any/not.
 - Sin editor gráfico, sin subgrafos y sin conversaciones anidadas.
 - Autoría a mano en JSON.
-
-
-## [Unreleased]
-
-### Changed
-- Una variable sin definir se compara como 0 frente a valores numéricos, y como
-  cadena vacía frente a cadenas. Antes cualquier comparación con una variable
-  inexistente daba false. Esto permite escribir `contador == 0` en lugar de
-  `{any: [{!exists}, {== 0}]}`.
-- `exists` / `!exists` pasan a ser la única forma de distinguir "sin definir"
-  de "cero".
-
-### Fixed
-- `Add` degradaba a int cualquier resultado sin decimales, cambiando el tipo de
-  variables double a mitad de partida.
-- `VariableInventory` marcaba como "nunca leída" una variable usada solo en
-  operaciones `+=` o `-=`.

@@ -2,6 +2,7 @@ using System.Threading;
 using System.Threading.Tasks;
 using NUnit.Framework;
 using Neurohard.Prompter;
+using System.Collections.Generic;
 
 namespace Neurohard.Playwright.Tests
 {
@@ -162,5 +163,23 @@ namespace Neurohard.Playwright.Tests
             Assert.AreEqual("no llevas suficiente", step.Choices[0].UnavailableReason);
             Assert.IsNull(step.Choices[1].UnavailableReason);
         }
+
+        [Test]
+        public void LaConsultaSeResuelveContraElJuego()
+        {
+            var ctx = new EvaluationContext(new InMemoryVariableStorage(), new FakeQueries());
+
+            Assert.IsTrue(new Condition.Query("puede_comprar", new[] { "cuerda" }).Evaluate(ctx));
+            Assert.IsFalse(new Condition.Query("puede_comprar", new[] { "amuleto" }).Evaluate(ctx));
+            Assert.IsFalse(new Condition.Query("otra_cosa").Evaluate(ctx));
+        }
+
+        private sealed class FakeQueries : IQueryResolver
+        {
+            public bool CanResolve(string name) => name == "puede_comprar";
+            public object Resolve(string name, IReadOnlyList<string> args) => args[0] == "cuerda";
+        }
     }
+
+
 }

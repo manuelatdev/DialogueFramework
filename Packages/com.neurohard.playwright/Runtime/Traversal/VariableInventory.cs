@@ -61,6 +61,9 @@ namespace Neurohard.Playwright
                 case Condition.Any any:
                     foreach (var c in any.Items) CollectFromCondition(c, nodeId, result);
                     break;
+                case Condition.Query q:
+                    if (q.Value is VariableRef qr) Get(result, qr.Name).ReadIn.Add(nodeId);
+                    break;
             }
         }
 

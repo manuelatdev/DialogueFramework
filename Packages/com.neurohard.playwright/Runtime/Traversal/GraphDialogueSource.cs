@@ -19,6 +19,8 @@ namespace Neurohard.Playwright
         private readonly Queue<Effect> _pendingEffects = new Queue<Effect>();
 
         private IVariableStorage _vars;
+        private EvaluationContext _ctx;
+
         private GraphNode _current;
         private Dictionary<string, GraphEdge> _awaiting;
         private bool _needsTraversal;
@@ -35,6 +37,7 @@ namespace Neurohard.Playwright
             if (context == null) throw new ArgumentNullException(nameof(context));
 
             _vars = context.Variables;
+            _ctx = new EvaluationContext(context.Variables, context.Queries);
             _pendingEffects.Clear();
             _awaiting = null;
             _needsTraversal = false;
@@ -133,7 +136,7 @@ namespace Neurohard.Playwright
 
             foreach (var edge in node.Out)
             {
-                if (edge.When == null || edge.When.Evaluate(_vars)) { Enter(edge); return true; }
+                if (edge.When == null || edge.When.Evaluate(_ctx)) { Enter(edge); return true; }
             }
 
             if (node.Fallthrough == FallthroughMode.End) return false;
@@ -185,7 +188,7 @@ namespace Neurohard.Playwright
                 var edge = node.Out[i];
                 if (!edge.IsOption) continue;
 
-                var available = edge.When == null || edge.When.Evaluate(_vars);
+                var available = edge.When == null || edge.When.Evaluate(_ctx);
                 if (!available && edge.HideWhenUnavailable) continue;
 
                 var id = string.IsNullOrEmpty(edge.OptionId) ? $"{node.Id}#{i}" : edge.OptionId;

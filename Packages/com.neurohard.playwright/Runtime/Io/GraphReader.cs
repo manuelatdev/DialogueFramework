@@ -150,6 +150,25 @@ namespace Neurohard.Playwright.Io
             if (json.Has("all")) return new Condition.All(ReadConditionList(json["all"], nodeId));
             if (json.Has("any")) return new Condition.Any(ReadConditionList(json["any"], nodeId));
             if (json.Has("not")) return new Condition.Not(ReadCondition(json["not"], nodeId));
+            if (json.Has("query"))
+            {
+                var name = json["query"].AsString($"El nombre de consulta en '{nodeId}'");
+
+                var args = new List<string>();
+                if (json.Has("args"))
+                    foreach (var a in json["args"].AsArray($"Los argumentos de la consulta '{name}'"))
+                        args.Add(a.Type == JsonValue.Kind.String ? a.StringValue : a.ToString());
+
+                var queryOp = json.Has("op")
+                    ? ParseComparison(json["op"].AsString("El operador"), json["op"].Line)
+                    : ComparisonOp.Equal;
+
+                var queryValue = json.Has("value")
+                    ? ReadValue(json["value"], $"El valor de una consulta de '{nodeId}'")
+                    : null;
+
+                return new Condition.Query(name, args, queryOp, queryValue);
+            }
 
             var variable = (json["var"] ?? throw new GraphFormatException(
                 $"Una condición de '{nodeId}' no tiene 'var', 'all', 'any' ni 'not'.", json.Line))

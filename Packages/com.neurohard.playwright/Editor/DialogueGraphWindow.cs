@@ -131,9 +131,11 @@ namespace Neurohard.Playwright.Editor
                 _panel.Rebuild(graph);
 
                 var report = GraphValidator.Validate(graph);
-                _issues.itemsSource = report.Issues.ToList();
-                _issues.style.display = report.Issues.Count > 0 ? DisplayStyle.Flex : DisplayStyle.None;
-                _issues.RefreshItems();
+                ShowIssues(report);
+
+                _status.text = report.IsValid
+                    ? $"{_asset.name} · {graph.Nodes.Count} nodos · sin errores"
+                    : $"{_asset.name} · {graph.Nodes.Count} nodos · {report.Issues.Count} incidencias";
 
                 RunSimulation();
             }
@@ -162,7 +164,7 @@ namespace Neurohard.Playwright.Editor
 
             try
             {
-                var result = GraphSimulator.Simulate(_asset.Graph, _panel.Variables);
+                var result = GraphSimulator.Simulate(_asset.Graph, _panel.Context);
                 _view.ApplySimulation(result);
                 _panel.ShowSummary(result);
             }

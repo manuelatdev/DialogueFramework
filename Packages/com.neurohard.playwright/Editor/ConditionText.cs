@@ -16,6 +16,11 @@ namespace Neurohard.Playwright.Editor
                     if (cmp.Op == ComparisonOp.Exists) return $"existe {cmp.Variable}";
                     if (cmp.Op == ComparisonOp.NotExists) return $"no existe {cmp.Variable}";
                     return $"{cmp.Variable} {Op(cmp.Op)} {cmp.Value}";
+                case Condition.Query q:
+                    var args = q.Arguments.Count > 0 ? $"({string.Join(", ", q.Arguments)})" : "";
+                    return q.Value == null
+                        ? $"?{q.Name}{args}"
+                        : $"?{q.Name}{args} {Op(q.Op)} {q.Value}";
                 default: return "?";
             }
         }

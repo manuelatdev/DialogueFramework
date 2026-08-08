@@ -13,27 +13,35 @@ namespace Neurohard.Playwright.Tests
         {
             var g = new DialogueGraph { Start = "encuentro" };
 
-            var encuentro = g.Add(new GraphNode {
-                Id = "encuentro", Type = NodeType.Line,
+            var encuentro = g.Add(new GraphNode
+            {
+                Id = "encuentro",
+                Type = NodeType.Line,
                 Line = new GraphLine { Text = "¿Quién anda ahí?", Speaker = "alba" }
             });
             encuentro.Out.Add(new GraphEdge { To = "menu" });
 
             var menu = g.Add(new GraphNode { Id = "menu", Type = NodeType.Choice });
-            menu.Out.Add(new GraphEdge {
-                To = "fin", OptionId = "paz",
+            menu.Out.Add(new GraphEdge
+            {
+                To = "fin",
+                OptionId = "paz",
                 Line = new GraphLine { Text = "Vengo en son de paz." }
             });
-            menu.Out.Add(new GraphEdge {
-                To = "soborno", OptionId = "pagar",
+            menu.Out.Add(new GraphEdge
+            {
+                To = "soborno",
+                OptionId = "pagar",
                 Line = new GraphLine { Text = "Te doy 50 de oro." },
                 When = new Condition.Compare("oro", ComparisonOp.GreaterOrEqual, 50),
                 Then = { new Effect.Assign("oro", AssignOp.Subtract, 50),
                          new Effect.Command("abrir_puerta", new[] { "norte" }) }
             });
 
-            var soborno = g.Add(new GraphNode {
-                Id = "soborno", Type = NodeType.Line,
+            var soborno = g.Add(new GraphNode
+            {
+                Id = "soborno",
+                Type = NodeType.Line,
                 Line = new GraphLine { Text = "Está bien, pasa.", Speaker = "alba" }
             });
             soborno.Out.Add(new GraphEdge { To = "fin" });
@@ -124,9 +132,9 @@ namespace Neurohard.Playwright.Tests
         {
             var source = new GraphDialogueSource(BuildGraph());
             await source.StartAsync(
-                new DialogueContext(new InMemoryVariableStorage(),
-                                    new Dictionary<string, string> { ["start"] = "soborno" }),
-                CancellationToken.None);
+    new DialogueContext(new InMemoryVariableStorage(),
+                        parameters: new Dictionary<string, string> { ["start"] = "soborno" }),
+    CancellationToken.None);
 
             var line = ((DialogueStep.Line)await source.AdvanceAsync(CancellationToken.None)).Value;
             Assert.AreEqual("Está bien, pasa.", line.Id.Value);

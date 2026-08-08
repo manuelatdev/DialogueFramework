@@ -21,12 +21,15 @@ namespace Neurohard.Prompter
     public sealed class DialogueContext
     {
         public IVariableStorage Variables { get; }
+        public IQueryResolver Queries { get; }
         public IReadOnlyDictionary<string, string> Parameters { get; }
 
         public DialogueContext(IVariableStorage variables,
+                               IQueryResolver queries = null,
                                IReadOnlyDictionary<string, string> parameters = null)
         {
             Variables = variables;
+            Queries = queries ?? new NoQueryResolver();
             Parameters = parameters ?? new Dictionary<string, string>();
         }
     }

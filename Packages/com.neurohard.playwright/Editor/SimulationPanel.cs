@@ -15,7 +15,7 @@ namespace Neurohard.Playwright.Editor
         private readonly InMemoryVariableStorage _vars = new InMemoryVariableStorage();
         private readonly Dictionary<string, string> _rawValues = new Dictionary<string, string>();
 
-        public IVariableStorage Variables => _vars;
+        public EvaluationContext Context => new EvaluationContext(_vars);
         public event Action Changed;
 
         public SimulationPanel()

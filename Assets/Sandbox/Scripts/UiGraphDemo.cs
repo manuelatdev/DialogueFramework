@@ -1,6 +1,7 @@
 using System.Threading;
 using System.Threading.Tasks;
 using UnityEngine;
+using UnityEngine.InputSystem;
 using Neurohard.Prompter;
 using Neurohard.Prompter.Unity;
 using Neurohard.Playwright.Unity;
@@ -9,20 +10,32 @@ public sealed class UiGraphDemo : MonoBehaviour
 {
     [SerializeField] private DialogueGraphAsset graphAsset;
     [SerializeField] private UiToolkitPresenter presenter;
-    [SerializeField] private int oroInicial = 0;
+    [SerializeField] private int carismaInicial = 1;
 
     private readonly InMemoryVariableStorage _vars = new InMemoryVariableStorage();
     private PrompterBehaviour _prompter;
+    private FakeShop _tienda;
 
     private void Start()
     {
-        _vars.Set("oro", oroInicial);          // el resto se crean solas al usarse
+        if (graphAsset == null || presenter == null)
+        {
+            Debug.LogError("Faltan referencias en el inspector.");
+            return;
+        }
+
+        _tienda = gameObject.AddComponent<FakeShop>();
+
+        _vars.Set("carisma", carismaInicial);
+        _vars.Set("descuento_concedido", false);
+        _vars.Set("compras_realizadas", 0);
 
         _prompter = gameObject.AddComponent<PrompterBehaviour>();
         _prompter.AddPresenter(presenter);
         _prompter.Input = presenter.Input;
         _prompter.Variables = _vars;
-        _prompter.Commands = new LogDispatcher();
+        _prompter.Commands = _tienda;
+        _prompter.Queries = _tienda;
 
         Hablar();
     }
@@ -36,25 +49,17 @@ public sealed class UiGraphDemo : MonoBehaviour
 
     private void Update()
     {
-        // Barra espaciadora para volver a hablar con Sarn.
-        if (!_prompter.IsPlaying && UnityEngine.InputSystem.Keyboard.current.spaceKey.wasPressedThisFrame)
+        if (_prompter == null || _prompter.IsPlaying) return;
+
+        if (Keyboard.current != null && Keyboard.current.spaceKey.wasPressedThisFrame)
             Hablar();
     }
 
     private void DumpVars()
     {
-        foreach (var name in new[] { "veces_hablado", "confianza", "mentiste", "oro", "sarn_hostil", "cruzaste" })
+        foreach (var name in new[] { "carisma", "compras_realizadas", "descuento_concedido" })
             Debug.Log(_vars.TryGet<object>(name, out var v) ? $"{name} = {v}" : $"{name} = (sin definir)");
-    }
 
-    private sealed class LogDispatcher : ICommandDispatcher
-    {
-        public bool CanHandle(string name) => true;
-
-        public Task DispatchAsync(DialogueStep.Command c, CancellationToken ct)
-        {
-            Debug.Log($"[Comando] {c.Name}({string.Join(", ", c.Arguments)})");
-            return Task.CompletedTask;
-        }
+        Debug.Log($"oro (tienda) = {_tienda.Oro}");
     }
 }

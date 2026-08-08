@@ -88,6 +88,20 @@ namespace Neurohard.Playwright.Io
                         obj.Set("value", JsonOut.Loose(cmp.Value));
 
                     return obj;
+                case Condition.Query query:
+                    var q = new JsonObj().Set("query", query.Name);
+
+                    if (query.Arguments.Count > 0)
+                        q.Set("args", Arr(query.Arguments, JsonOut.Str));
+
+                    // Sin valor, la forma corta significa "es verdadera": no escribas op.
+                    if (query.Value != null)
+                    {
+                        q.Set("op", OpText(query.Op));
+                        q.Set("value", JsonOut.Loose(query.Value));
+                    }
+
+                    return q;
 
                 default:
                     return new JsonObj();

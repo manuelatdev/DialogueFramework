@@ -25,7 +25,7 @@ namespace Neurohard.Prompter
         {
             try
             {
-                var context = new DialogueContext(_options.Variables, parameters);
+                var context = new DialogueContext(_options.Variables, _options.Queries, parameters);
                 await _source.StartAsync(context, ct);
 
                 while (true)

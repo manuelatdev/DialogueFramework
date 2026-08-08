@@ -1,0 +1,449 @@
+{
+  "version": 1,
+  "start": "n_root",
+  "nodes": [
+    {
+      "id": "n_root",
+      "title": "Entrada Mercader",
+      "type": "hub",
+      "editor": {
+        "x": 0,
+        "y": 0
+      },
+      "out": [
+        {
+          "to": "n_saludo_cliente_habitual",
+          "when": {
+            "var": "compras_realizadas",
+            "op": ">=",
+            "value": 1
+          }
+        },
+        {
+          "to": "n_saludo_inicial"
+        }
+      ]
+    },
+    {
+      "id": "n_saludo_inicial",
+      "title": "Primer saludo",
+      "type": "line",
+      "line": {
+        "text": "¡Bienvenido, viajero! Acero, provisiones y raridades de ultramar. Si tienes moneda, tengo el género.",
+        "speaker": "Gideon el Mercader"
+      },
+      "editor": {
+        "x": 300,
+        "y": -130
+      },
+      "out": [
+        {
+          "to": "n_menu_principal"
+        }
+      ]
+    },
+    {
+      "id": "n_saludo_cliente_habitual",
+      "title": "Saludo cliente habitual",
+      "type": "line",
+      "line": {
+        "text": "De nuevo por aquí. Mi bolsa agradece tu fidelidad. ¿Qué necesitas hoy?",
+        "speaker": "Gideon el Mercader"
+      },
+      "editor": {
+        "x": 300,
+        "y": 130
+      },
+      "out": [
+        {
+          "to": "n_menu_principal"
+        }
+      ]
+    },
+    {
+      "id": "n_menu_principal",
+      "title": "Menú Principal",
+      "type": "choice",
+      "editor": {
+        "x": 600,
+        "y": 0
+      },
+      "out": [
+        {
+          "to": "n_menu_compras",
+          "id": "opcion_comprar",
+          "line": {
+            "text": "Enséñame lo que tienes a la venta."
+          }
+        },
+        {
+          "to": "n_menu_venta",
+          "id": "opcion_vender",
+          "line": {
+            "text": "Quiero venderte algunos objetos."
+          }
+        },
+        {
+          "to": "n_regateo_evaluar",
+          "id": "opcion_regatear",
+          "line": {
+            "text": "¿No podrías hacerme un descuento especial?"
+          },
+          "reason": "ya has conseguido el mejor precio",
+          "when": {
+            "var": "descuento_concedido",
+            "op": "==",
+            "value": false
+          }
+        },
+        {
+          "to": "n_pregunta_lore",
+          "id": "opcion_preguntar",
+          "line": {
+            "text": "¿Cómo está el camino hacia la capital?"
+          }
+        },
+        {
+          "to": "n_despedida",
+          "id": "opcion_salir",
+          "line": {
+            "text": "Por ahora nada más. Me marcho."
+          }
+        }
+      ]
+    },
+    {
+      "id": "n_menu_compras",
+      "title": "Catálogo de Compras",
+      "type": "choice",
+      "editor": {
+        "x": 900,
+        "y": -130
+      },
+      "out": [
+        {
+          "to": "n_confirmacion",
+          "id": "comprar_cuerda",
+          "line": {
+            "text": "Comprar Cuerda de cáñamo (10 monedas)."
+          },
+          "reason": "no te lo puedes permitir",
+          "when": {
+            "query": "puede_comprar",
+            "args": [
+              "cuerda"
+            ]
+          },
+          "then": [
+            {
+              "command": "comprar",
+              "args": [
+                "cuerda"
+              ]
+            }
+          ]
+        },
+        {
+          "to": "n_confirmacion",
+          "id": "comprar_pocion",
+          "line": {
+            "text": "Comprar Poción de cura (25 monedas)."
+          },
+          "reason": "no te lo puedes permitir",
+          "when": {
+            "query": "puede_comprar",
+            "args": [
+              "pocion"
+            ]
+          },
+          "then": [
+            {
+              "command": "comprar",
+              "args": [
+                "pocion"
+              ]
+            }
+          ]
+        },
+        {
+          "to": "n_confirmacion",
+          "id": "comprar_antorcha",
+          "line": {
+            "text": "Comprar Antorcha resinosa (5 monedas)."
+          },
+          "reason": "no te lo puedes permitir",
+          "when": {
+            "query": "puede_comprar",
+            "args": [
+              "antorcha"
+            ]
+          },
+          "then": [
+            {
+              "command": "comprar",
+              "args": [
+                "antorcha"
+              ]
+            }
+          ]
+        },
+        {
+          "to": "n_confirmacion",
+          "id": "comprar_amuleto_especial",
+          "line": {
+            "text": "Comprar Amuleto Antiguo (100 monedas)."
+          },
+          "reason": "no te lo puedes permitir",
+          "hideWhenUnavailable": false,
+          "when": {
+            "query": "puede_comprar",
+            "args": [
+              "amuleto"
+            ]
+          },
+          "then": [
+            {
+              "command": "comprar",
+              "args": [
+                "amuleto"
+              ]
+            }
+          ]
+        },
+        {
+          "to": "n_menu_principal",
+          "id": "volver_menu_principal",
+          "line": {
+            "text": "Volver al menú anterior."
+          }
+        }
+      ]
+    },
+    {
+      "id": "n_confirmacion",
+      "type": "line",
+      "line": {
+        "text": "Un trato justo. Aquí tienes tu mercancía.",
+        "speaker": "Gideon el Mercader"
+      },
+      "editor": {
+        "x": 1200,
+        "y": -130
+      },
+      "out": [
+        {
+          "to": "n_menu_compras"
+        }
+      ]
+    },
+    {
+      "id": "n_menu_venta",
+      "title": "Menú Venta",
+      "type": "choice",
+      "editor": {
+        "x": 900,
+        "y": 130
+      },
+      "out": [
+        {
+          "to": "n_vender_piel",
+          "id": "vender_piel",
+          "line": {
+            "text": "Vender Piel de lobo (12 monedas)."
+          },
+          "reason": "no tienes pieles en tu inventario",
+          "when": {
+            "query": "tiene_objeto",
+            "args": [
+              "piel"
+            ]
+          },
+          "then": [
+            {
+              "command": "vender",
+              "args": [
+                "piel"
+              ]
+            }
+          ]
+        },
+        {
+          "to": "n_menu_principal",
+          "id": "vender_volver",
+          "line": {
+            "text": "Volver al menú principal."
+          }
+        }
+      ]
+    },
+    {
+      "id": "n_vender_piel",
+      "type": "line",
+      "line": {
+        "text": "Buena curtición. Me la quedo y aquí tienes tus 12 monedas de oro.",
+        "speaker": "Gideon el Mercader"
+      },
+      "editor": {
+        "x": 1200,
+        "y": 130
+      },
+      "out": [
+        {
+          "to": "n_menu_venta"
+        }
+      ]
+    },
+    {
+      "id": "n_regateo_evaluar",
+      "title": "Evaluación Regateo",
+      "type": "hub",
+      "editor": {
+        "x": 900,
+        "y": 260
+      },
+      "out": [
+        {
+          "to": "n_regateo_exito",
+          "when": {
+            "var": "carisma",
+            "op": ">=",
+            "value": 3
+          },
+          "then": [
+            {
+              "var": "descuento_concedido",
+              "op": "=",
+              "value": true
+            },
+            {
+              "command": "aplicar_descuento",
+              "args": [
+                "gideon"
+              ]
+            }
+          ]
+        },
+        {
+          "to": "n_regateo_exito_fidelidad",
+          "when": {
+            "var": "compras_realizadas",
+            "op": ">=",
+            "value": 3
+          },
+          "then": [
+            {
+              "var": "descuento_concedido",
+              "op": "=",
+              "value": true
+            },
+            {
+              "command": "aplicar_descuento",
+              "args": [
+                "gideon"
+              ]
+            }
+          ]
+        },
+        {
+          "to": "n_regateo_fracaso"
+        }
+      ]
+    },
+    {
+      "id": "n_regateo_exito",
+      "type": "line",
+      "line": {
+        "text": "Tienes labia y presencia, forastero. Ajustemos los precios un 20% abajo.",
+        "speaker": "Gideon el Mercader"
+      },
+      "editor": {
+        "x": 1200,
+        "y": 260
+      },
+      "out": [
+        {
+          "to": "n_menu_principal"
+        }
+      ]
+    },
+    {
+      "id": "n_regateo_exito_fidelidad",
+      "type": "line",
+      "line": {
+        "text": "Eres un buen cliente. Por la fidelidad, te hago un descuento permanente.",
+        "speaker": "Gideon el Mercader"
+      },
+      "editor": {
+        "x": 1200,
+        "y": 390
+      },
+      "out": [
+        {
+          "to": "n_menu_principal"
+        }
+      ]
+    },
+    {
+      "id": "n_regateo_fracaso",
+      "type": "line",
+      "line": {
+        "text": "Traer el género hasta este vado cuesta sangre. El precio es el que ves.",
+        "speaker": "Gideon el Mercader"
+      },
+      "editor": {
+        "x": 1200,
+        "y": 520
+      },
+      "out": [
+        {
+          "to": "n_menu_principal"
+        }
+      ]
+    },
+    {
+      "id": "n_pregunta_lore",
+      "type": "line",
+      "line": {
+        "text": "Poco tráfico desde la guardia de Sarn. Los impuestos suben y los monstruos rondan las colinas.",
+        "speaker": "Gideon el Mercader"
+      },
+      "editor": {
+        "x": 900,
+        "y": 650
+      },
+      "out": [
+        {
+          "to": "n_menu_principal"
+        }
+      ]
+    },
+    {
+      "id": "n_despedida",
+      "type": "line",
+      "line": {
+        "text": "Que las monedas pesen en tu bolsa y el camino te sea leve.",
+        "speaker": "Gideon el Mercader"
+      },
+      "editor": {
+        "x": 900,
+        "y": 780
+      },
+      "out": [
+        {
+          "to": "n_fin"
+        }
+      ]
+    },
+    {
+      "id": "n_fin",
+      "title": "Fin",
+      "type": "hub",
+      "fallthrough": "end",
+      "editor": {
+        "x": 1200,
+        "y": 780
+      },
+      "out": []
+    }
+  ]
+}
