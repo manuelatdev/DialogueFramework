@@ -329,7 +329,7 @@
                 },
                 {
                     "to": "n_sin_dinero_mentira",
-                    "id": "sin_dinero",
+                    "id": "sin_dinero_mentira",
                     "line": {
                         "text": "No llevo tanto encima."
                     },
