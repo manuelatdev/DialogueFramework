@@ -1,0 +1,6 @@
+{
+  "name": "Neurohard.Prompter",
+  "rootNamespace": "Neurohard.Prompter.Unity",
+  "references": [ "Neurohard.Prompter.Core" ],
+  "autoReferenced": true
+}

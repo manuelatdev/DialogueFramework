@@ -1,2 +1,4 @@
 ﻿<Solution>
+  <Project Path="Neurohard.Prompter.Tests.csproj" />
+  <Project Path="Neurohard.Prompter.Core.csproj" />
 </Solution>

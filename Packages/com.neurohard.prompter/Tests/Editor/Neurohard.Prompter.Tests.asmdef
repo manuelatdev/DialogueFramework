@@ -1,0 +1,9 @@
+{
+  "name": "Neurohard.Prompter.Tests",
+  "rootNamespace": "Neurohard.Prompter.Tests",
+  "references": [ "Neurohard.Prompter.Core", "UnityEngine.TestRunner", "UnityEditor.TestRunner" ],
+  "includePlatforms": [ "Editor" ],
+  "overrideReferences": true,
+  "precompiledReferences": [ "nunit.framework.dll" ],
+  "defineConstraints": [ "UNITY_INCLUDE_TESTS" ]
+}
