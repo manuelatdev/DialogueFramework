@@ -69,7 +69,7 @@ namespace Neurohard.Prompter.Unity
         {
             if (_player != null) return;
 
-            var options = new PrompterOptions
+            var options = new DialoguePlayerOptions
             {
                 Variables = Variables,
                 LineProvider = LineProvider,

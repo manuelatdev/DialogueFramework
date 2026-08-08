@@ -36,7 +36,7 @@ namespace Neurohard.Playwright.Tests
             var presenter = new Capture();
             var comandos = new List<string>();
 
-var prompter = new DialoguePlayer(new PrompterOptions {
+var prompter = new DialoguePlayer(new DialoguePlayerOptions {
                 Presenters = { presenter },
                 Input = new PickById("pagar"),
                 Variables = vars,

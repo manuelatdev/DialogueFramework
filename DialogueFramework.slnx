@@ -4,7 +4,7 @@
   <Project Path="Neurohard.Playwright.Editor.csproj" />
   <Project Path="Neurohard.Prompter.Tests.csproj" />
   <Project Path="Assembly-CSharp.csproj" />
-  <Project Path="Neurohard.Prompter.csproj" />
+  <Project Path="Neurohard.Prompter.Unity.csproj" />
   <Project Path="Neurohard.Playwright.Unity.csproj" />
   <Project Path="Neurohard.Playwright.Tests.csproj" />
   <Project Path="Neurohard.Prompter.Sample.Minimal.csproj" />

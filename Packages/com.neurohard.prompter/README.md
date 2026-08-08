@@ -9,7 +9,7 @@ muestra uno o más presentadores (`IDialoguePresenter`).
 ## Uso mínimo
 
 ```csharp
-var prompter = new DialoguePlayer(new PrompterOptions {
+var prompter = new DialoguePlayer(new DialoguePlayerOptions {
     Presenters = { miPresentador }
 });
 

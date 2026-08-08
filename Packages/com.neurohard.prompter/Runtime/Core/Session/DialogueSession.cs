@@ -9,11 +9,11 @@ namespace Neurohard.Prompter
     internal sealed class DialogueSession
     {
         private readonly IDialogueSource _source;
-        private readonly PrompterOptions _options;
+        private readonly DialoguePlayerOptions _options;
         private readonly List<IDialoguePresenter> _presenters;
         private readonly List<OptionChoice> _choices = new List<OptionChoice>();
 
-        public DialogueSession(IDialogueSource source, PrompterOptions options)
+        public DialogueSession(IDialogueSource source, DialoguePlayerOptions options)
         {
             _source = source;
             _options = options;

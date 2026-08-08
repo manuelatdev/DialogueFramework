@@ -10,8 +10,7 @@ using Neurohard.Prompter.Unity;
 public sealed class UiToolkitPresenter : MonoBehaviour, IDialoguePresenter
 {
     [SerializeField, Range(5f, 120f)] private float charactersPerSecond = 45f;
-    [SerializeField] private UnityEngine.Object inputProvider;   // opcional
-
+    
     private VisualElement _dialoguePanel;
     private VisualElement _optionsPanel;
     private VisualElement _optionsList;

@@ -16,7 +16,7 @@ Primera versión funcional: reproduce un guion lineal de punta a punta.
 - Defaults: `PassthroughLineProvider`, `InMemoryVariableStorage`,
   `LoggingCommandDispatcher`, `ImmediateInput`.
 - Sources: `LinearScript` con las factorías `DialogueSource.FromLines` y `FromSteps`.
-- Session: `DialogueSession` y la fachada `Prompter` con `PrompterOptions`.
+- Session: `DialogueSession` y la fachada `Prompter` con `DialoguePlayerOptions`.
 
 ### Limitaciones conocidas
 - **Skip sin ventana de gracia.** Si el jugador pulsa justo cuando la presentación

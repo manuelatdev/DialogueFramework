@@ -8,10 +8,10 @@ namespace Neurohard.Prompter
     /// <summary>Reproductor de diálogo. Reutilizable; una sesión activa a la vez.</summary>
     public sealed class DialoguePlayer
     {
-        private readonly PrompterOptions _options;
+        private readonly DialoguePlayerOptions _options;
         private int _busy;
 
-        public DialoguePlayer(PrompterOptions options)
+        public DialoguePlayer(DialoguePlayerOptions options)
         {
             if (options == null) throw new ArgumentNullException(nameof(options));
             _options = options.Materialize();

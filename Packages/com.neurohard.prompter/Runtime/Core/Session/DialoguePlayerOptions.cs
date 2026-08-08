@@ -4,7 +4,7 @@ using System.Collections.Generic;
 namespace Neurohard.Prompter
 {
     /// <summary>Cableado de una instancia de Prompter. Solo Presenters es obligatorio.</summary>
-    public sealed class PrompterOptions
+    public sealed class DialoguePlayerOptions
     {
         public IList<IDialoguePresenter> Presenters { get; } = new List<IDialoguePresenter>();
 
@@ -16,11 +16,11 @@ namespace Neurohard.Prompter
         /// <summary>Destino de avisos y errores. Core no conoce UnityEngine.</summary>
         public Action<string> Log { get; set; }
 
-        internal PrompterOptions Materialize()
+        internal DialoguePlayerOptions Materialize()
         {
             if (Presenters.Count == 0)
                 throw new InvalidOperationException(
-                    "Prompter no tiene presentadores. Añade al menos uno en PrompterOptions.Presenters " +
+                    "Prompter no tiene presentadores. Añade al menos uno en DialoguePlayerOptions.Presenters " +
                     "(implementa IDialoguePresenter) antes de llamar a Play.");
 
             Log ??= _ => { };

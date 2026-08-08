@@ -16,7 +16,7 @@ namespace Neurohard.Prompter
         public Task DispatchAsync(DialogueStep.Command command, CancellationToken ct)
         {
             _log($"[Prompter] Comando '{command.Name}' recibido pero sin manejador registrado. " +
-                 "Registra un ICommandDispatcher en PrompterOptions.");
+                 "Registra un ICommandDispatcher en DialoguePlayerOptions.");
             return Task.CompletedTask;
         }
     }

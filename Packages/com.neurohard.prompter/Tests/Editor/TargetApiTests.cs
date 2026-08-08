@@ -9,7 +9,7 @@ namespace Neurohard.Prompter.Tests
         public async Task ReproduceUnGuionDeDosLineas()
         {
             var presenter = new RecordingPresenter();
-            var prompter = new DialoguePlayer(new PrompterOptions { Presenters = { presenter } });
+            var prompter = new DialoguePlayer(new DialoguePlayerOptions { Presenters = { presenter } });
 
             var result = await prompter.Play(DialogueSource.FromLines(
                 "Alba: ¿Y esto qué es?",
@@ -27,7 +27,7 @@ namespace Neurohard.Prompter.Tests
         public void SinPresentadores_ElErrorEsExplicito()
         {
             var ex = Assert.Throws<System.InvalidOperationException>(
-                () => new DialoguePlayer(new PrompterOptions()));
+                () => new DialoguePlayer(new DialoguePlayerOptions()));
 
             StringAssert.Contains("Presenters", ex.Message);
         }
@@ -36,7 +36,7 @@ namespace Neurohard.Prompter.Tests
         public async Task UnPresentadorQueFalla_NoTumbaLaSesion()
         {
             var bueno = new RecordingPresenter();
-            var prompter = new DialoguePlayer(new PrompterOptions {
+            var prompter = new DialoguePlayer(new DialoguePlayerOptions {
                 Presenters = { new ThrowingPresenter(), bueno }
             });
 
