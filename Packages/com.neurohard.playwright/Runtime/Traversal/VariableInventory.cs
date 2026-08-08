@@ -28,8 +28,21 @@ namespace Neurohard.Playwright
                     if (edge.When != null) CollectFromCondition(edge.When, node.Id, result);
 
                     foreach (var effect in edge.Then)
+                    {
                         if (effect is Effect.Assign assign)
-                            Get(result, assign.Variable).WrittenIn.Add(node.Id);
+                        {
+                            var usage = Get(result, assign.Variable);
+
+                            // Siempre es una escritura
+                            usage.WrittenIn.Add(node.Id);
+
+                            // Si es una modificación (+ o -), también requiere leer el valor previo
+                            if (assign.Op == AssignOp.Add || assign.Op == AssignOp.Subtract)
+                            {
+                                usage.ReadIn.Add(node.Id);
+                            }
+                        }
+                    }
                 }
 
             return result;

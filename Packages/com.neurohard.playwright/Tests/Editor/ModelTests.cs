@@ -44,5 +44,49 @@ namespace Neurohard.Playwright.Tests
             Assert.IsTrue(vars.TryGet<int>("oro", out var oro));
             Assert.AreEqual(50, oro);
         }
+
+        [Test]
+        public void VariableInexistente_CuentaComoCeroEnComparacionNumerica()
+        {
+            var v = new InMemoryVariableStorage();
+            Assert.IsTrue(new Condition.Compare("contador", ComparisonOp.Equal, 0).Evaluate(v));
+            Assert.IsFalse(new Condition.Compare("contador", ComparisonOp.GreaterOrEqual, 3).Evaluate(v));
+        }
+
+        [Test]
+        public void VariableInexistente_EsDistintaDeUnaCadena()
+        {
+            var v = new InMemoryVariableStorage();
+            Assert.IsTrue(new Condition.Compare("estado", ComparisonOp.NotEqual, "hecho").Evaluate(v));
+            Assert.IsFalse(new Condition.Compare("estado", ComparisonOp.Equal, "hecho").Evaluate(v));
+        }
+
+        [Test]
+        public void ExistsSigueDistinguiendoNoDefinidoDeCero()
+        {
+            var v = new InMemoryVariableStorage();
+            Assert.IsFalse(new Condition.Compare("c", ComparisonOp.Exists, null).Evaluate(v));
+            v.Set("c", 0);
+            Assert.IsTrue(new Condition.Compare("c", ComparisonOp.Exists, null).Evaluate(v));
+        }
+
+        [Test]
+        public void SumarSobreVariableInexistente_DaElDeltaComoInt()
+        {
+            var v = new InMemoryVariableStorage();
+            new Effect.Assign("oro", AssignOp.Add, 10).Apply(v);
+            Assert.IsTrue(v.TryGet<int>("oro", out var oro));
+            Assert.AreEqual(10, oro);
+        }
+
+        [Test]
+        public void SumarDecimales_NoDegradaADoble()
+        {
+            var v = new InMemoryVariableStorage();
+            v.Set("vida", 2.5);
+            new Effect.Assign("vida", AssignOp.Add, 0.5).Apply(v);
+            Assert.IsTrue(v.TryGet<double>("vida", out var vida));
+            Assert.AreEqual(3.0, vida);
+        }
     }
 }

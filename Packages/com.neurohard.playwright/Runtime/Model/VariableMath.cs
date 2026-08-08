@@ -7,7 +7,19 @@ namespace Neurohard.Playwright
     {
         public static bool Compare(object a, object b, ComparisonOp op)
         {
-            if (TryAsDouble(a, out var da) && TryAsDouble(b, out var db))
+            // Una variable sin definir cuenta como 0, pero solo frente a un número.
+            // Contra una cadena sigue tratándose como cadena vacía, para que
+            // "estado != hecho" sea true cuando la variable no existe.
+            var aUnset = IsUnset(a);
+            var bUnset = IsUnset(b);
+
+            var aIsNum = TryAsDouble(a, out var da);
+            var bIsNum = TryAsDouble(b, out var db);
+
+            if (aUnset && bIsNum) { da = 0; aIsNum = true; }
+            if (bUnset && aIsNum) { db = 0; bIsNum = true; }
+
+            if (aIsNum && bIsNum)
             {
                 var c = da.CompareTo(db);
                 return op switch
@@ -39,15 +51,25 @@ namespace Neurohard.Playwright
             };
         }
 
+        private static bool IsUnset(object value)
+            => value == null || (value is string s && string.IsNullOrWhiteSpace(s));
+
         public static object Add(object current, object delta, int sign)
         {
-            if (TryAsDouble(current, out var dc) && TryAsDouble(delta, out var dd))
+            var currentVal = IsUnset(current) ? 0 : current;
+            var deltaVal = IsUnset(delta) ? 0 : delta;
+
+            if (TryAsDouble(currentVal, out var dc) && TryAsDouble(deltaVal, out var dd))
             {
                 var result = dc + sign * dd;
-                if (current is int || current == null)
-                    if (Math.Abs(result % 1) < double.Epsilon) return (int)result;
+
+                // Solo colapsa a int si el valor original ya era int.
+                if (currentVal is int && Math.Abs(result % 1) < double.Epsilon)
+                    return (int)result;
+
                 return result;
             }
+
             throw new InvalidOperationException(
                 $"No se puede sumar '{delta}' a '{current}': ambos deben ser numéricos.");
         }
@@ -56,14 +78,27 @@ namespace Neurohard.Playwright
         {
             switch (value)
             {
-                case null: result = 0; return false;
-                case double d: result = d; return true;
-                case float f: result = f; return true;
-                case int i: result = i; return true;
-                case long l: result = l; return true;
-                case string s when double.TryParse(s, NumberStyles.Any, CultureInfo.InvariantCulture, out var p):
-                    result = p; return true;
-                default: result = 0; return false;
+                case null:
+                    result = 0;
+                    return false;
+                case double d:
+                    result = d;
+                    return true;
+                case float f:
+                    result = f;
+                    return true;
+                case int i:
+                    result = i;
+                    return true;
+                case long l:
+                    result = l;
+                    return true;
+                case string s when !string.IsNullOrWhiteSpace(s) && double.TryParse(s, NumberStyles.Any, CultureInfo.InvariantCulture, out var p):
+                    result = p;
+                    return true;
+                default:
+                    result = 0;
+                    return false;
             }
         }
     }

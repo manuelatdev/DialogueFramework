@@ -90,6 +90,9 @@ namespace Neurohard.Playwright
         /// <summary>Renombra un nodo y actualiza todas las aristas que lo apuntan.</summary>
         public void Rename(string oldId, string newId)
         {
+            if (string.IsNullOrEmpty(newId))
+                throw new ArgumentException("El nuevo Id no puede estar vacío.");
+
             var node = Find(oldId) ?? throw new ArgumentException($"No existe el nodo '{oldId}'.");
             if (_index.ContainsKey(newId)) throw new ArgumentException($"Ya existe un nodo '{newId}'.");
 
