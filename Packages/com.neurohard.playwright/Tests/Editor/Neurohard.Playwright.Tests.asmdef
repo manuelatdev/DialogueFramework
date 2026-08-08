@@ -1,0 +1,10 @@
+{
+  "name": "Neurohard.Playwright.Tests",
+  "rootNamespace": "Neurohard.Playwright.Tests",
+  "references": [ "Neurohard.Playwright", "Neurohard.Prompter.Core",
+                  "UnityEngine.TestRunner", "UnityEditor.TestRunner" ],
+  "includePlatforms": [ "Editor" ],
+  "overrideReferences": true,
+  "precompiledReferences": [ "nunit.framework.dll" ],
+  "defineConstraints": [ "UNITY_INCLUDE_TESTS" ]
+}

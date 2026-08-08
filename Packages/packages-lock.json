@@ -1,5 +1,13 @@
 {
   "dependencies": {
+    "com.neurohard.playwright": {
+      "version": "file:com.neurohard.playwright",
+      "depth": 0,
+      "source": "embedded",
+      "dependencies": {
+        "com.neurohard.prompter": "0.1.0"
+      }
+    },
     "com.neurohard.prompter": {
       "version": "file:com.neurohard.prompter",
       "depth": 0,

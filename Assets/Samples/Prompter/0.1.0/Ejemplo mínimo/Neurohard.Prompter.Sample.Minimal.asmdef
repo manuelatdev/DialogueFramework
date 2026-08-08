@@ -1,0 +1,6 @@
+{
+  "name": "Neurohard.Prompter.Sample.Minimal",
+  "rootNamespace": "Neurohard.Prompter.Samples",
+  "references": [ "Neurohard.Prompter.Core" ],
+  "autoReferenced": true
+}

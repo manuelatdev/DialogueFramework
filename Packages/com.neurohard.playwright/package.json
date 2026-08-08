@@ -1,0 +1,9 @@
+{
+  "name": "com.neurohard.playwright",
+  "version": "0.1.0",
+  "displayName": "Playwright",
+  "description": "Grafos de conversación como fuente de diálogo para Prompter.",
+  "unity": "6000.3",
+  "author": { "name": "Neurohard" },
+  "dependencies": { "com.neurohard.prompter": "0.1.0" }
+}

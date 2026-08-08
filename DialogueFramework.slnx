@@ -1,4 +1,7 @@
 ﻿<Solution>
   <Project Path="Neurohard.Prompter.Core.csproj" />
+  <Project Path="Neurohard.Playwright.csproj" />
   <Project Path="Neurohard.Prompter.Tests.csproj" />
+  <Project Path="Neurohard.Prompter.Sample.Minimal.csproj" />
+  <Project Path="Neurohard.Playwright.Tests.csproj" />
 </Solution>

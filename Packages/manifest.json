@@ -54,6 +54,7 @@
     "com.unity.modules.xr": "1.0.0"
   },
   "testables": [
-    "com.neurohard.prompter"
+    "com.neurohard.prompter",
+    "com.neurohard.playwright"
   ]
 }

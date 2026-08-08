@@ -4,6 +4,15 @@
   "displayName": "Prompter",
   "description": "Reproductor de diálogo agnóstico de la fuente y de la presentación.",
   "unity": "6000.3",
-  "author": { "name": "Neurohard" },
-  "dependencies": {}
+  "author": {
+    "name": "Neurohard"
+  },
+  "dependencies": {},
+  "samples": [
+    {
+      "displayName": "Ejemplo mínimo",
+      "description": "Presentador de consola e input IMGUI.",
+      "path": "Samples~/MinimalExample"
+    }
+  ]
 }
