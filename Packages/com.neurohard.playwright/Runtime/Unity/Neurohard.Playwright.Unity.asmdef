@@ -1,0 +1,6 @@
+{
+  "name": "Neurohard.Playwright.Unity",
+  "rootNamespace": "Neurohard.Playwright.Unity",
+  "references": [ "Neurohard.Playwright", "Neurohard.Prompter.Core" ],
+  "autoReferenced": true
+}
