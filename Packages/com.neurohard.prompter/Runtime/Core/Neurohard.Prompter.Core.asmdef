@@ -2,6 +2,6 @@
   "name": "Neurohard.Prompter.Core",
   "rootNamespace": "Neurohard.Prompter",
   "references": [],
-  "autoReferenced": false,
+  "autoReferenced": true,
   "noEngineReferences": true
 }
