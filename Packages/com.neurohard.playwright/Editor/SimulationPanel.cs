@@ -15,8 +15,10 @@ namespace Neurohard.Playwright.Editor
         private readonly InMemoryVariableStorage _vars = new InMemoryVariableStorage();
         private readonly Dictionary<string, string> _rawValues = new Dictionary<string, string>();
 
-        public EvaluationContext Context => new EvaluationContext(_vars);
-        public event Action Changed;
+        private readonly ManualQueryResolver _queries = new ManualQueryResolver();
+        private VisualElement _queryFields;
+
+        public EvaluationContext Context => new EvaluationContext(_vars, _queries); public event Action Changed;
 
         public SimulationPanel()
         {
@@ -32,10 +34,19 @@ namespace Neurohard.Playwright.Editor
             title.style.marginBottom = 6;
             Add(title);
 
-            _fields = new VisualElement();
+            _fields = new VisualElement();          // ← variables
             Add(_fields);
 
-            _summary = new Label();
+            var queryTitle = new Label("Consultas al juego");
+            queryTitle.style.unityFontStyleAndWeight = FontStyle.Bold;
+            queryTitle.style.marginTop = 12;
+            queryTitle.style.marginBottom = 4;
+            Add(queryTitle);
+
+            _queryFields = new VisualElement();     // ← consultas
+            Add(_queryFields);
+
+            _summary = new Label();                 // ← al final
             _summary.style.whiteSpace = WhiteSpace.Normal;
             _summary.style.marginTop = 10;
             _summary.style.opacity = 0.85f;
@@ -44,6 +55,12 @@ namespace Neurohard.Playwright.Editor
 
         /// <summary>Reconstruye los campos a partir de las variables que usa el grafo.</summary>
         public void Rebuild(DialogueGraph graph)
+        {
+            RebuildVariables(graph);
+            RebuildQueries(graph);
+        }
+
+        private void RebuildVariables(DialogueGraph graph)
         {
             _fields.Clear();
 
@@ -108,6 +125,72 @@ namespace Neurohard.Playwright.Editor
             if (int.TryParse(raw, NumberStyles.Integer, CultureInfo.InvariantCulture, out var i)) { _vars.Set(name, i); return; }
             if (double.TryParse(raw, NumberStyles.Float, CultureInfo.InvariantCulture, out var d)) { _vars.Set(name, d); return; }
             _vars.Set(name, raw);
+        }
+
+        private void RebuildQueries(DialogueGraph graph)
+        {
+            _queryFields.Clear();
+
+            var inventory = QueryInventory.Collect(graph);
+            if (inventory.Count == 0)
+            {
+                _queryFields.Add(new Label("El grafo no consulta al juego.") { style = { opacity = 0.6f } });
+                return;
+            }
+
+            foreach (var usage in inventory.Values)
+                foreach (var key in usage.ArgumentSets)
+                {
+                    var row = new VisualElement();
+                    row.style.flexDirection = FlexDirection.Row;
+                    row.style.marginBottom = 2;
+
+                    if (usage.NeedsValue)
+                    {
+                        var label = new Label(key);
+                        label.style.width = 110;
+                        label.style.overflow = Overflow.Hidden;
+                        label.tooltip = key;
+                        row.Add(label);
+
+                        var field = new TextField { value = _queries.GetRaw(key) };
+                        field.style.flexGrow = 1;
+                        var k = key;
+                        field.RegisterValueChangedCallback(evt =>
+                        {
+                            _queries.Set(k, Parse(evt.newValue));
+                            Changed?.Invoke();
+                        });
+                        row.Add(field);
+                    }
+                    else
+                    {
+                        var toggle = new Toggle(key) { value = _queries.GetBool(key) };
+                        toggle.style.flexGrow = 1;
+                        toggle.tooltip = $"Usada en: {string.Join(", ", usage.UsedIn)}";
+                        var k = key;
+                        toggle.RegisterValueChangedCallback(evt =>
+                        {
+                            _queries.Set(k, evt.newValue);
+                            Changed?.Invoke();
+                        });
+                        row.Add(toggle);
+                    }
+
+                    _queryFields.Add(row);
+                    _queryFields.Add(row);
+if (!_queries.Has(key))
+    _queries.Set(key, usage.NeedsValue ? (object)"0" : false);                }
+        }
+
+        private static object Parse(string raw)
+        {
+            if (bool.TryParse(raw, out var b)) return b;
+            if (int.TryParse(raw, System.Globalization.NumberStyles.Integer,
+                             System.Globalization.CultureInfo.InvariantCulture, out var i)) return i;
+            if (double.TryParse(raw, System.Globalization.NumberStyles.Float,
+                                System.Globalization.CultureInfo.InvariantCulture, out var d)) return d;
+            return raw;
         }
     }
 }
