@@ -32,8 +32,8 @@ namespace Neurohard.Playwright.Editor
             if (model.Line != null)
                 AddPreview(model.Line);
 
-            foreach (var edge in model.Out)
-                AddOutputPort(edge);
+            for (var i = 0; i < model.Out.Count; i++)
+                AddOutputPort(model.Out[i], i, model.Type);
 
             if (model.Type == NodeType.Hub && model.Fallthrough == FallthroughMode.End)
                 AddBadge("fin si no hay salida", new Color(0.5f, 0.5f, 0.5f));
@@ -138,5 +138,46 @@ namespace Neurohard.Playwright.Editor
         };
 
         public void SetDimmed(bool dimmed) => style.opacity = dimmed ? 0.3f : 1f;
+
+        private void AddOutputPort(GraphEdge edge, int index, NodeType nodeType)
+        {
+            var port = InstantiatePort(Orientation.Horizontal, Direction.Output,
+                                       Port.Capacity.Single, typeof(bool));
+            port.portName = PortLabel(edge, index, nodeType);
+            port.userData = edge;
+            outputContainer.Add(port);
+            Outputs.Add(port);
+        }
+
+        private static string PortLabel(GraphEdge edge, int index, NodeType nodeType)
+        {
+            var parts = new List<string>();
+
+            // En line y hub el orden es semántico: se toma la primera que cumple.
+            var ordenado = nodeType != NodeType.Choice;
+            if (ordenado) parts.Add($"{index + 1}.");
+
+            if (edge.IsOption)
+            {
+                var text = edge.Line.Text ?? edge.Line.LineId ?? "(opción)";
+                if (text.Length > 28) text = text.Substring(0, 25) + "…";
+                parts.Add(text);
+            }
+
+            var incondicional = edge.When == null || edge.When is Condition.Always;
+
+            if (!incondicional)
+                parts.Add($"[{ConditionText.Describe(edge.When)}]");
+            else if (ordenado)
+                parts.Add("[siempre]");
+
+            if (edge.Then.Count > 0)
+                parts.Add($"⚡{edge.Then.Count}");
+
+            if (!string.IsNullOrEmpty(edge.Reason))
+                parts.Add($"↯{edge.Reason}");
+
+            return parts.Count == 0 ? "→" : string.Join(" ", parts);
+        }
     }
 }

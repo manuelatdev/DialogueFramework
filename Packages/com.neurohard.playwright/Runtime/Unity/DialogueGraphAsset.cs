@@ -47,7 +47,15 @@ namespace Neurohard.Playwright.Unity
 #endif
         public GraphDialogueSource CreateSource()
         {
-            var source = new GraphDialogueSource(Graph);
+            var graph = Graph;
+
+#if UNITY_EDITOR
+            var report = GraphValidator.Validate(graph);
+            if (report.HasErrors)
+                Debug.LogError($"[{name}] El grafo tiene errores y puede fallar a mitad de conversación:\n{report}");
+#endif
+
+            var source = new GraphDialogueSource(graph);
 #if UNITY_EDITOR
             _lastSource = source;
 #endif

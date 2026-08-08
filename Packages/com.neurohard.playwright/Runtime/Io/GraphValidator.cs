@@ -77,12 +77,24 @@ namespace Neurohard.Playwright
 
                 case NodeType.Choice:
                     var options = node.Out.Where(e => e.IsOption).ToList();
+
                     if (options.Count == 0)
                         issues.Add(Error(node.Id, "Nodo choice sin ninguna salida que tenga 'line'."));
+
                     if (options.All(e => e.HideWhenUnavailable) && options.Count > 0 &&
                         options.All(e => !(e.When is Condition.Always)))
                         issues.Add(Warning(node.Id,
                             "Todas las opciones son condicionales y ocultables: puede quedar sin opciones visibles."));
+
+                    var textos = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
+                    foreach (var e in options)
+                    {
+                        var texto = e.Line?.Text ?? e.Line?.LineId;
+                        if (!string.IsNullOrEmpty(texto) && !textos.Add(texto))
+                            issues.Add(Warning(node.Id,
+                                $"Dos opciones comparten el texto «{texto}». Si solo difieren en el destino, " +
+                                "usa una sola opción que lleve a un nodo hub."));
+                    }
                     break;
 
                 case NodeType.Hub:
