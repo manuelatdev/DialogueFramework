@@ -5,6 +5,8 @@ namespace Neurohard.Playwright.Io
 {
     public static class GraphReader
     {
+        private const string VarRefKey = "$var";
+
         public static DialogueGraph FromJson(string json)
         {
             var root = JsonParser.Parse(json).AsObject("La raíz del grafo");
@@ -80,6 +82,25 @@ namespace Neurohard.Playwright.Io
             }
         }
 
+        /// <summary>Lee un valor literal o una referencia { "$var": "nombre" }.</summary>
+        private static object ReadValue(JsonValue json, string context)
+        {
+            if (json == null) return null;
+
+            if (json.Type == JsonValue.Kind.Object)
+            {
+                var name = json[VarRefKey];
+                if (name == null)
+                    throw new GraphFormatException(
+                        $"{context}: un objeto como valor solo se admite en la forma {{ \"{VarRefKey}\": \"nombre\" }}.",
+                        json.Line);
+
+                return new VariableRef(name.AsString($"{context}: el nombre de la referencia"));
+            }
+
+            return json.AsLoose();
+        }
+
         private static GraphLine ReadLine(JsonValue json, string nodeId)
         {
             json.AsObject($"La línea de '{nodeId}'");
@@ -136,7 +157,9 @@ namespace Neurohard.Playwright.Io
             var opText = json.Has("op") ? json["op"].AsString("El operador") : "==";
             var op = ParseComparison(opText, json.Line);
 
-            object value = json.Has("value") ? json["value"].AsLoose() : null;
+            object value = json.Has("value")
+    ? ReadValue(json["value"], $"El valor de una condición de '{nodeId}'")
+    : null;
             return new Condition.Compare(variable, op, value);
         }
 
@@ -192,7 +215,8 @@ namespace Neurohard.Playwright.Io
                     $"Operador de asignación desconocido '{opText}'. Usa =, += o -=.", json.Line)
             };
 
-            return new Effect.Assign(variable, op, json.Has("value") ? json["value"].AsLoose() : null);
+            return new Effect.Assign(variable, op,
+                json.Has("value") ? ReadValue(json["value"], $"El valor de un efecto de '{nodeId}'") : null);
         }
     }
 }

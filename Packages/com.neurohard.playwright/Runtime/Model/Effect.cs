@@ -24,13 +24,15 @@ namespace Neurohard.Playwright
                 Variable = variable; Op = op; Value = value;
             }
 
-            public void Apply(IVariableStorage vars)
-            {
-                if (Op == AssignOp.Set) { vars.Set(Variable, Value); return; }
+public void Apply(IVariableStorage vars)
+{
+    var value = ValueResolver.Resolve(Value, vars);
 
-                vars.TryGet<object>(Variable, out var current);
-                vars.Set(Variable, VariableMath.Add(current, Value, Op == AssignOp.Add ? 1 : -1));
-            }
+    if (Op == AssignOp.Set) { vars.Set(Variable, value); return; }
+
+    vars.TryGet<object>(Variable, out var current);
+    vars.Set(Variable, VariableMath.Add(current, value, Op == AssignOp.Add ? 1 : -1));
+}
         }
 
         /// <summary>Se emite como DialogueStep.Command; Playwright no ejecuta nada del juego.</summary>

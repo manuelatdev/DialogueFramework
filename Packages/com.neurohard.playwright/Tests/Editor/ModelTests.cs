@@ -88,5 +88,47 @@ namespace Neurohard.Playwright.Tests
             Assert.IsTrue(v.TryGet<double>("vida", out var vida));
             Assert.AreEqual(3.0, vida);
         }
+
+        [Test]
+public void CompararVariableContraVariable()
+{
+    var v = new InMemoryVariableStorage();
+    v.Set("oro", 10);
+    v.Set("precio", 3);
+
+    var c = new Condition.Compare("oro", ComparisonOp.GreaterOrEqual, new VariableRef("precio"));
+    Assert.IsTrue(c.Evaluate(v));
+
+    v.Set("precio", 50);
+    Assert.IsFalse(c.Evaluate(v));
+}
+
+[Test]
+public void RestarUnaCantidadReferenciada()
+{
+    var v = new InMemoryVariableStorage();
+    v.Set("oro", 10);
+    v.Set("precio", 3);
+
+    new Effect.Assign("oro", AssignOp.Subtract, new VariableRef("precio")).Apply(v);
+
+    Assert.IsTrue(v.TryGet<int>("oro", out var oro));
+    Assert.AreEqual(7, oro);
+}
+
+[Test]
+public void ElInventarioCuentaLaVariableReferenciada()
+{
+    var g = new DialogueGraph { Start = "a" };
+    var a = g.Add(new GraphNode { Id = "a", Type = NodeType.Line, Line = new GraphLine { Text = "Hola" } });
+    a.Out.Add(new GraphEdge {
+        To = "a",
+        When = new Condition.Compare("oro", ComparisonOp.GreaterOrEqual, new VariableRef("precio"))
+    });
+
+    var inventory = VariableInventory.Collect(g);
+    Assert.IsTrue(inventory.ContainsKey("precio"));
+    Assert.IsFalse(inventory["precio"].IsNeverRead);
+}
     }
 }

@@ -1,6 +1,5 @@
 using System.Collections.Generic;
 using System.Globalization;
-using System.Linq;
 using System.Text;
 
 namespace Neurohard.Playwright.Io
@@ -25,6 +24,7 @@ namespace Neurohard.Playwright.Io
             int i => Num(i),
             float f => Num(f),
             double d => Num(d),
+            VariableRef r => new JsonObj().Set("$var", r.Name),
             _ => Str(v.ToString())
         };
 

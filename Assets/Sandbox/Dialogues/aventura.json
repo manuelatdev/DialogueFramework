@@ -1,292 +1,986 @@
 {
-  "version": 1,
-  "start": "n_root",
-  "nodes": [
-    { "id": "n_root", "title": "Entrada", "type": "hub",
-      "editor": { "x": 0, "y": 0 },
-      "out": [
-        { "to": "n_post_cruce", "when": { "var": "cruzaste", "op": "==", "value": true } },
-        { "to": "n_saludo_hostil", "when": { "var": "sarn_hostil", "op": "==", "value": true },
-          "then": [ { "var": "veces_hablado", "op": "+=", "value": 1 } ] },
-        { "to": "n_primer_saludo",
-          "when": { "var": "veces_hablado", "op": "==", "value": 0 },
-          "then": [ { "var": "veces_hablado", "op": "+=", "value": 1 } ] },
-        { "to": "n_saludo_repetido",
-          "then": [ { "var": "veces_hablado", "op": "+=", "value": 1 } ] }
-      ] },
-
-    { "id": "n_primer_saludo", "title": "Primer encuentro", "type": "line",
-      "line": { "text": "Alto ahí. El puente es mío mientras el preboste no diga lo contrario.", "speaker": "Sarn" },
-      "editor": { "x": 300, "y": -390 },
-      "out": [ { "to": "n_primera_pregunta" } ] },
-
-    { "id": "n_primera_pregunta", "type": "line",
-      "line": { "text": "¿Y qué te trae al vado, con esa cara de prisa?", "speaker": "Sarn" },
-      "editor": { "x": 600, "y": -390 },
-      "out": [ { "to": "n_menu_tono" } ] },
-
-    { "id": "n_menu_tono", "title": "Tono inicial", "type": "choice",
-      "editor": { "x": 900, "y": -390 },
-      "out": [
-        { "to": "n_salvoconducto", "id": "salvoconducto",
-          "line": { "text": "Llevo salvoconducto del preboste.", "tags": [ "necesitas el salvoconducto" ] },
-          "when": { "var": "tiene_salvoconducto", "op": "==", "value": true } },
-        { "to": "n_tono_amable", "id": "amable",
-          "line": { "text": "Solo quiero cruzar. Con respeto." },
-          "then": [ { "var": "confianza", "op": "+=", "value": 1 } ] },
-        { "to": "n_tono_brusco", "id": "brusco",
-          "line": { "text": "Aparta, viejo." },
-          "then": [ { "var": "confianza", "op": "-=", "value": 1 } ] },
-        { "to": "n_tono_mentira", "id": "mentira",
-          "line": { "text": "Vengo de parte del preboste." },
-          "then": [
-            { "var": "mentiste", "op": "=", "value": true },
-            { "var": "confianza", "op": "+=", "value": 2 } ] }
-      ] },
-
-    { "id": "n_salvoconducto", "type": "line",
-      "line": { "text": "Papel sellado. Bien. Los que traen papel no suelen traer cuchillo.", "speaker": "Sarn" },
-      "editor": { "x": 1200, "y": -650 },
-      "out": [ { "to": "n_cruce_libre" } ] },
-
-    { "id": "n_tono_amable", "type": "line",
-      "line": { "text": "Respeto. Hacía semanas que no oía esa palabra por aquí.", "speaker": "Sarn" },
-      "editor": { "x": 1200, "y": -520 },
-      "out": [ { "to": "n_precio" } ] },
-
-    { "id": "n_tono_brusco", "type": "line",
-      "line": { "text": "Viejo, sí. Y con las llaves. Tú verás cómo sigues.", "speaker": "Sarn" },
-      "editor": { "x": 1200, "y": -390 },
-      "out": [ { "to": "n_precio" } ] },
-
-    { "id": "n_tono_mentira", "type": "line",
-      "line": { "text": "¿Del preboste? Hm. No me dijo que esperase a nadie.", "speaker": "Sarn" },
-      "editor": { "x": 1200, "y": -260 },
-      "out": [ { "to": "n_precio_reducido" } ] },
-
-    { "id": "n_precio", "title": "Precio normal", "type": "line",
-      "line": { "text": "Tres monedas por cruzar. El puente se paga solo, dicen.", "speaker": "Sarn" },
-      "editor": { "x": 1500, "y": -390 },
-      "out": [ { "to": "n_menu_pago" } ] },
-
-    { "id": "n_precio_reducido", "title": "Precio de favor", "type": "line",
-      "line": { "text": "Si vienes de su parte, una moneda. Por la molestia del registro.", "speaker": "Sarn" },
-      "editor": { "x": 1500, "y": -160 },
-      "out": [ { "to": "n_menu_pago_reducido" } ] },
-
-    { "id": "n_menu_pago", "type": "choice",
-      "editor": { "x": 1800, "y": -390 },
-      "out": [
-        { "to": "n_pago_hecho", "id": "pagar3",
-          "line": { "text": "Toma. Tres monedas.", "tags": [ "necesitas 3 monedas" ] },
-          "when": { "var": "oro", "op": ">=", "value": 3 },
-          "then": [
-            { "var": "oro", "op": "-=", "value": 3 },
-            { "command": "sonar_monedas", "args": [ "bolsa" ] } ] },
-        { "to": "n_sin_dinero", "id": "sin_dinero",
-          "line": { "text": "No llevo tanto encima." } },
-        { "to": "n_amenaza", "id": "amenaza",
-          "line": { "text": "Podría cruzar sin pagar." } }
-      ] },
-
-    { "id": "n_menu_pago_reducido", "type": "choice",
-      "editor": { "x": 1800, "y": -160 },
-      "out": [
-        { "to": "n_pago_hecho", "id": "pagar1",
-          "line": { "text": "Aquí tienes tu moneda.", "tags": [ "necesitas 1 moneda" ] },
-          "when": { "var": "oro", "op": ">=", "value": 1 },
-          "then": [
-            { "var": "oro", "op": "-=", "value": 1 },
-            { "command": "sonar_monedas", "args": [ "bolsa" ] } ] },
-        { "to": "n_sin_dinero_mentira", "id": "sin_dinero_mentira",
-          "line": { "text": "Ni una moneda llevo." } }
-      ] },
-
-    { "id": "n_pago_hecho", "type": "line",
-      "line": { "text": "Contado y guardado. Cruza cuando quieras.", "speaker": "Sarn" },
-      "editor": { "x": 2100, "y": -520 },
-      "out": [ { "to": "n_cruce_libre" } ] },
-
-    { "id": "n_sin_dinero", "type": "line",
-      "line": { "text": "Entonces vuelve cuando lleves. El río no tiene prisa y yo tampoco.", "speaker": "Sarn" },
-      "editor": { "x": 2100, "y": -390 },
-      "out": [ { "to": "n_despedida" } ] },
-
-    { "id": "n_sin_dinero_mentira", "type": "line",
-      "line": { "text": "El preboste manda a un enviado sin bolsa. Curioso.", "speaker": "Sarn" },
-      "editor": { "x": 2100, "y": -160 },
-      "out": [ { "to": "n_sospecha" } ] },
-
-    { "id": "n_sospecha", "type": "line",
-      "line": { "text": "Dime su nombre completo. El que usa cuando firma.", "speaker": "Sarn" },
-      "editor": { "x": 2400, "y": -160 },
-      "out": [ { "to": "n_menu_sospecha" } ] },
-
-    { "id": "n_menu_sospecha", "type": "choice",
-      "editor": { "x": 2700, "y": -160 },
-      "out": [
-        { "to": "n_confesion", "id": "confesar",
-          "line": { "text": "Está bien. Mentí. No conozco al preboste." },
-          "then": [
-            { "var": "mentiste", "op": "=", "value": false },
-            { "var": "confianza", "op": "+=", "value": 1 } ] },
-        { "to": "n_farol", "id": "farol",
-          "line": { "text": "Compruébalo tú mismo, si tanto te importa." } }
-      ] },
-
-    { "id": "n_confesion", "type": "line",
-      "line": { "text": "Ya. Al menos sabes cuándo parar. Eso vale más que tres monedas.", "speaker": "Sarn" },
-      "editor": { "x": 3000, "y": -290 },
-      "out": [ { "to": "n_despedida" } ] },
-
-    { "id": "n_farol", "type": "line",
-      "line": { "text": "Lo haré. Y hasta entonces, tú de aquí no pasas.", "speaker": "Sarn" },
-      "editor": { "x": 3000, "y": -30 },
-      "out": [ { "to": "n_hostil_inicio",
-                 "then": [ { "var": "sarn_hostil", "op": "=", "value": true } ] } ] },
-
-    { "id": "n_amenaza", "type": "line",
-      "line": { "text": "Podrías. Y yo podría soltar la cuerda del contrapeso.", "speaker": "Sarn" },
-      "editor": { "x": 2100, "y": -290 },
-      "out": [ { "to": "n_menu_amenaza" } ] },
-
-    { "id": "n_menu_amenaza", "type": "choice",
-      "editor": { "x": 2400, "y": -290 },
-      "out": [
-        { "to": "n_disculpa", "id": "retirar",
-          "line": { "text": "Retiro lo dicho." },
-          "then": [ { "var": "confianza", "op": "-=", "value": 1 } ] },
-        { "to": "n_hostil_inicio", "id": "insistir",
-          "line": { "text": "Lo digo muy en serio." },
-          "then": [
-            { "var": "sarn_hostil", "op": "=", "value": true },
-            { "command": "reproducir_musica", "args": [ "tension" ] } ] }
-      ] },
-
-    { "id": "n_disculpa", "type": "line",
-      "line": { "text": "Más te vale. Vuelve con monedas y hablamos.", "speaker": "Sarn" },
-      "editor": { "x": 2700, "y": -420 },
-      "out": [ { "to": "n_despedida" } ] },
-
-    { "id": "n_hostil_inicio", "type": "line",
-      "line": { "text": "Se acabó la charla. Aléjate del puente.", "speaker": "Sarn" },
-      "editor": { "x": 3300, "y": -30 },
-      "out": [ { "to": "n_despedida_hostil" } ] },
-
-    { "id": "n_cruce_libre", "title": "Permiso concedido", "type": "line",
-      "line": { "text": "Pasa. Y hagas lo que hagas, no mires al agua a mitad del vano.", "speaker": "Sarn" },
-      "editor": { "x": 2400, "y": -650 },
-      "out": [ { "to": "n_confirmar_cruce" } ] },
-
-    { "id": "n_confirmar_cruce", "title": "Punto de no retorno", "type": "choice",
-      "editor": { "x": 2700, "y": -650 },
-      "out": [
-        { "to": "n_cruzado", "id": "cruzar",
-          "line": { "text": "Cruzar el puente." },
-          "then": [
-            { "var": "cruzaste", "op": "=", "value": true },
-            { "command": "cambiar_escena", "args": [ "puente_norte" ] } ] },
-        { "to": "n_despedida", "id": "esperar",
-          "line": { "text": "Aún no. Volveré." } }
-      ] },
-
-    { "id": "n_cruzado", "type": "line",
-      "line": { "text": "Buen viaje. Y no vuelvas por aquí de noche.", "speaker": "Sarn" },
-      "editor": { "x": 3000, "y": -650 },
-      "out": [ { "to": "n_fin" } ] },
-
-    { "id": "n_saludo_repetido", "title": "Vuelta", "type": "line",
-      "line": { "text": "Otra vez tú.", "speaker": "Sarn" },
-      "editor": { "x": 300, "y": 130 },
-      "out": [ { "to": "n_hub_repetido" } ] },
-
-    { "id": "n_hub_repetido", "title": "Según confianza", "type": "hub",
-      "editor": { "x": 600, "y": 130 },
-      "out": [
-        { "to": "n_repetido_confiado", "when": { "var": "confianza", "op": ">=", "value": 2 } },
-        { "to": "n_repetido_frio", "when": { "var": "confianza", "op": "<=", "value": -1 } },
-        { "to": "n_repetido_neutro" }
-      ] },
-
-    { "id": "n_repetido_confiado", "type": "line",
-      "line": { "text": "Empiezo a acostumbrarme a tu cara. No sé si es bueno.", "speaker": "Sarn" },
-      "editor": { "x": 900, "y": 0 },
-      "out": [ { "to": "n_menu_repetido" } ] },
-
-    { "id": "n_repetido_frio", "type": "line",
-      "line": { "text": "Habla rápido y no te acerques tanto.", "speaker": "Sarn" },
-      "editor": { "x": 900, "y": 130 },
-      "out": [ { "to": "n_menu_repetido" } ] },
-
-    { "id": "n_repetido_neutro", "type": "line",
-      "line": { "text": "¿Qué quieres ahora?", "speaker": "Sarn" },
-      "editor": { "x": 900, "y": 260 },
-      "out": [ { "to": "n_menu_repetido" } ] },
-
-    { "id": "n_menu_repetido", "type": "choice",
-      "editor": { "x": 1200, "y": 130 },
-      "out": [
-        { "to": "n_menu_sospecha", "id": "retomar_mentira",
-          "line": { "text": "Sobre lo del preboste..." },
-          "when": { "var": "mentiste", "op": "==", "value": true },
-          "hideWhenUnavailable": true },
-        { "to": "n_precio", "id": "preguntar_precio",
-          "line": { "text": "¿Cuánto por cruzar?" } },
-        { "to": "n_lore", "id": "lore",
-          "line": { "text": "Háblame del río." } },
-        { "to": "n_despedida", "id": "nada",
-          "line": { "text": "Nada. Adiós." } }
-      ] },
-
-    { "id": "n_lore", "type": "line",
-      "line": { "text": "Baja del deshielo y sube de la marea. Dos aguas peleando en un solo cauce.", "speaker": "Sarn" },
-      "editor": { "x": 1500, "y": 260 },
-      "out": [ { "to": "n_lore2" } ] },
-
-    { "id": "n_lore2", "type": "line",
-      "line": { "text": "Por eso el puente cruje. No es la madera: es el río recordando algo.", "speaker": "Sarn" },
-      "editor": { "x": 1500, "y": 390 },
-      "out": [ { "to": "n_menu_repetido" } ] },
-
-    { "id": "n_saludo_hostil", "title": "Hostil", "type": "line",
-      "line": { "text": "Te dije que te alejaras.", "speaker": "Sarn" },
-      "editor": { "x": 300, "y": 650 },
-      "out": [ { "to": "n_menu_hostil" } ] },
-
-    { "id": "n_menu_hostil", "type": "choice",
-      "editor": { "x": 600, "y": 650 },
-      "out": [
-        { "to": "n_reconciliacion", "id": "disculpa",
-          "line": { "text": "Vengo a disculparme.", "tags": [ "no con esa reputación" ] },
-          "when": { "var": "confianza", "op": ">=", "value": 0 } },
-        { "to": "n_despedida_hostil", "id": "irse",
-          "line": { "text": "Solo pasaba." } }
-      ] },
-
-    { "id": "n_reconciliacion", "type": "line",
-      "line": { "text": "Hm. Una vez. Y porque el turno es largo y aburrido.", "speaker": "Sarn" },
-      "editor": { "x": 900, "y": 650 },
-      "out": [ { "to": "n_despedida",
-                 "then": [ { "var": "sarn_hostil", "op": "=", "value": false } ] } ] },
-
-    { "id": "n_post_cruce", "title": "Ya cruzaste", "type": "line",
-      "line": { "text": "Ya pasaste una vez. Lo que haya al otro lado ya no es asunto mío.", "speaker": "Sarn" },
-      "editor": { "x": 300, "y": 910 },
-      "out": [ { "to": "n_fin" } ] },
-
-    { "id": "n_despedida", "type": "line",
-      "line": { "text": "Anda con ojo.", "speaker": "Sarn" },
-      "editor": { "x": 3600, "y": 130 },
-      "out": [ { "to": "n_fin" } ] },
-
-    { "id": "n_despedida_hostil", "type": "line",
-      "line": { "text": "...", "speaker": "Sarn" },
-      "editor": { "x": 3600, "y": 390 },
-      "out": [ { "to": "n_fin" } ] },
-
-    { "id": "n_fin", "title": "Fin", "type": "hub",
-      "fallthrough": "end",
-      "editor": { "x": 3900, "y": 260 },
-      "out": [] }
-  ]
+    "version": 1,
+    "start": "n_root",
+    "nodes": [
+        {
+            "id": "n_root",
+            "title": "Entrada",
+            "type": "hub",
+            "editor": {
+                "x": 0,
+                "y": 0
+            },
+            "out": [
+                {
+                    "to": "n_post_cruce",
+                    "when": {
+                        "var": "cruzaste",
+                        "op": "==",
+                        "value": true
+                    }
+                },
+                {
+                    "to": "n_saludo_hostil",
+                    "when": {
+                        "var": "sarn_hostil",
+                        "op": "==",
+                        "value": true
+                    },
+                    "then": [
+                        {
+                            "var": "veces_hablado",
+                            "op": "+=",
+                            "value": 1
+                        }
+                    ]
+                },
+                {
+                    "to": "n_primer_saludo",
+                    "when": {
+                        "var": "veces_hablado",
+                        "op": "==",
+                        "value": 0
+                    },
+                    "then": [
+                        {
+                            "var": "veces_hablado",
+                            "op": "+=",
+                            "value": 1
+                        }
+                    ]
+                },
+                {
+                    "to": "n_saludo_repetido",
+                    "then": [
+                        {
+                            "var": "veces_hablado",
+                            "op": "+=",
+                            "value": 1
+                        }
+                    ]
+                }
+            ]
+        },
+        {
+            "id": "n_primer_saludo",
+            "title": "Primer encuentro",
+            "type": "line",
+            "line": {
+                "text": "Alto ahí. El puente es mío mientras el preboste no diga lo contrario.",
+                "speaker": "Sarn"
+            },
+            "editor": {
+                "x": 300,
+                "y": -390
+            },
+            "out": [
+                {
+                    "to": "n_primera_pregunta"
+                }
+            ]
+        },
+        {
+            "id": "n_primera_pregunta",
+            "type": "line",
+            "line": {
+                "text": "¿Y qué te trae al vado, con esa cara de prisa?",
+                "speaker": "Sarn"
+            },
+            "editor": {
+                "x": 600,
+                "y": -390
+            },
+            "out": [
+                {
+                    "to": "n_menu_tono"
+                }
+            ]
+        },
+        {
+            "id": "n_menu_tono",
+            "title": "Tono inicial",
+            "type": "choice",
+            "editor": {
+                "x": 900,
+                "y": -390
+            },
+            "out": [
+                {
+                    "to": "n_salvoconducto",
+                    "id": "salvoconducto",
+                    "line": {
+                        "text": "Llevo salvoconducto del preboste.",
+                        "tags": [
+                            "necesitas el salvoconducto"
+                        ]
+                    },
+                    "when": {
+                        "var": "tiene_salvoconducto",
+                        "op": "==",
+                        "value": true
+                    }
+                },
+                {
+                    "to": "n_tono_amable",
+                    "id": "amable",
+                    "line": {
+                        "text": "Solo quiero cruzar. Con respeto."
+                    },
+                    "then": [
+                        {
+                            "var": "confianza",
+                            "op": "+=",
+                            "value": 1
+                        }
+                    ]
+                },
+                {
+                    "to": "n_tono_brusco",
+                    "id": "brusco",
+                    "line": {
+                        "text": "Aparta, viejo."
+                    },
+                    "then": [
+                        {
+                            "var": "confianza",
+                            "op": "-=",
+                            "value": 1
+                        }
+                    ]
+                },
+                {
+                    "to": "n_tono_mentira",
+                    "id": "mentira",
+                    "line": {
+                        "text": "Vengo de parte del preboste."
+                    },
+                    "then": [
+                        {
+                            "var": "mentiste",
+                            "op": "=",
+                            "value": true
+                        },
+                        {
+                            "var": "confianza",
+                            "op": "+=",
+                            "value": 2
+                        }
+                    ]
+                }
+            ]
+        },
+        {
+            "id": "n_salvoconducto",
+            "type": "line",
+            "line": {
+                "text": "Papel sellado. Bien. Los que traen papel no suelen traer cuchillo.",
+                "speaker": "Sarn"
+            },
+            "editor": {
+                "x": 1200,
+                "y": -650
+            },
+            "out": [
+                {
+                    "to": "n_cruce_libre"
+                }
+            ]
+        },
+        {
+            "id": "n_tono_amable",
+            "type": "line",
+            "line": {
+                "text": "Respeto. Hacía semanas que no oía esa palabra por aquí.",
+                "speaker": "Sarn"
+            },
+            "editor": {
+                "x": 1200,
+                "y": -520
+            },
+            "out": [
+                {
+                    "to": "n_precio"
+                }
+            ]
+        },
+        {
+            "id": "n_tono_brusco",
+            "type": "line",
+            "line": {
+                "text": "Viejo, sí. Y con las llaves. Tú verás cómo sigues.",
+                "speaker": "Sarn"
+            },
+            "editor": {
+                "x": 1200,
+                "y": -390
+            },
+            "out": [
+                {
+                    "to": "n_precio"
+                }
+            ]
+        },
+        {
+            "id": "n_tono_mentira",
+            "type": "line",
+            "line": {
+                "text": "¿Del preboste? Hm. No me dijo que esperase a nadie.",
+                "speaker": "Sarn"
+            },
+            "editor": {
+                "x": 1200,
+                "y": -260
+            },
+            "out": [
+                {
+                    "to": "n_precio_reducido"
+                }
+            ]
+        },
+        {
+            "id": "n_precio",
+            "title": "Precio normal",
+            "type": "line",
+            "line": {
+                "text": "Tres monedas por cruzar. El puente se paga solo, dicen.",
+                "speaker": "Sarn"
+            },
+            "editor": {
+                "x": 1500,
+                "y": -390
+            },
+            "out": [
+                {
+                    "to": "n_menu_pago",
+                    "then": [
+                        {
+                            "var": "precio",
+                            "op": "=",
+                            "value": 3
+                        }
+                    ]
+                }
+            ]
+        },
+        {
+            "id": "n_precio_reducido",
+            "title": "Precio de favor",
+            "type": "line",
+            "line": {
+                "text": "Si vienes de su parte, una moneda. Por la molestia del registro.",
+                "speaker": "Sarn"
+            },
+            "editor": {
+                "x": 1500,
+                "y": -160
+            },
+            "out": [
+                {
+                    "to": "n_menu_pago",
+                    "then": [
+                        {
+                            "var": "precio",
+                            "op": "=",
+                            "value": 1
+                        }
+                    ]
+                }
+            ]
+        },
+        {
+            "id": "n_menu_pago",
+            "type": "choice",
+            "editor": {
+                "x": 1800,
+                "y": -390
+            },
+            "out": [
+                {
+                    "to": "n_pago_hecho",
+                    "id": "pagar",
+                    "line": {
+                        "text": "Toma tu peaje.",
+                        "tags": [
+                            "no llevas suficiente"
+                        ]
+                    },
+                    "when": {
+                        "var": "oro",
+                        "op": ">=",
+                        "value": {
+                            "$var": "precio"
+                        }
+                    },
+                    "then": [
+                        {
+                            "var": "oro",
+                            "op": "-=",
+                            "value": {
+                                "$var": "precio"
+                            }
+                        },
+                        {
+                            "command": "sonar_monedas",
+                            "args": [
+                                "bolsa"
+                            ]
+                        }
+                    ]
+                },
+                {
+                    "to": "n_sin_dinero_mentira",
+                    "id": "sin_dinero",
+                    "line": {
+                        "text": "No llevo tanto encima."
+                    },
+                    "when": {
+                        "var": "mentiste",
+                        "op": "==",
+                        "value": true
+                    }
+                },
+                {
+                    "to": "n_sin_dinero",
+                    "id": "sin_dinero",
+                    "line": {
+                        "text": "No llevo tanto encima."
+                    }
+                },
+                {
+                    "to": "n_amenaza",
+                    "id": "amenaza",
+                    "line": {
+                        "text": "Podría cruzar sin pagar."
+                    }
+                }
+            ]
+        },
+        {
+            "id": "n_pago_hecho",
+            "type": "line",
+            "line": {
+                "text": "Contado y guardado. Cruza cuando quieras.",
+                "speaker": "Sarn"
+            },
+            "editor": {
+                "x": 2100,
+                "y": -520
+            },
+            "out": [
+                {
+                    "to": "n_cruce_libre"
+                }
+            ]
+        },
+        {
+            "id": "n_sin_dinero",
+            "type": "line",
+            "line": {
+                "text": "Entonces vuelve cuando lleves. El río no tiene prisa y yo tampoco.",
+                "speaker": "Sarn"
+            },
+            "editor": {
+                "x": 2100,
+                "y": -390
+            },
+            "out": [
+                {
+                    "to": "n_despedida"
+                }
+            ]
+        },
+        {
+            "id": "n_sin_dinero_mentira",
+            "type": "line",
+            "line": {
+                "text": "El preboste manda a un enviado sin bolsa. Curioso.",
+                "speaker": "Sarn"
+            },
+            "editor": {
+                "x": 2100,
+                "y": -160
+            },
+            "out": [
+                {
+                    "to": "n_sospecha"
+                }
+            ]
+        },
+        {
+            "id": "n_sospecha",
+            "type": "line",
+            "line": {
+                "text": "Dime su nombre completo. El que usa cuando firma.",
+                "speaker": "Sarn"
+            },
+            "editor": {
+                "x": 2400,
+                "y": -160
+            },
+            "out": [
+                {
+                    "to": "n_menu_sospecha"
+                }
+            ]
+        },
+        {
+            "id": "n_menu_sospecha",
+            "type": "choice",
+            "editor": {
+                "x": 2700,
+                "y": -160
+            },
+            "out": [
+                {
+                    "to": "n_confesion",
+                    "id": "confesar",
+                    "line": {
+                        "text": "Está bien. Mentí. No conozco al preboste."
+                    },
+                    "then": [
+                        {
+                            "var": "mentiste",
+                            "op": "=",
+                            "value": false
+                        },
+                        {
+                            "var": "confianza",
+                            "op": "+=",
+                            "value": 1
+                        }
+                    ]
+                },
+                {
+                    "to": "n_farol",
+                    "id": "farol",
+                    "line": {
+                        "text": "Compruébalo tú mismo, si tanto te importa."
+                    }
+                }
+            ]
+        },
+        {
+            "id": "n_confesion",
+            "type": "line",
+            "line": {
+                "text": "Ya. Al menos sabes cuándo parar. Eso vale más que tres monedas.",
+                "speaker": "Sarn"
+            },
+            "editor": {
+                "x": 3000,
+                "y": -290
+            },
+            "out": [
+                {
+                    "to": "n_despedida"
+                }
+            ]
+        },
+        {
+            "id": "n_farol",
+            "type": "line",
+            "line": {
+                "text": "Lo haré. Y hasta entonces, tú de aquí no pasas.",
+                "speaker": "Sarn"
+            },
+            "editor": {
+                "x": 3000,
+                "y": -30
+            },
+            "out": [
+                {
+                    "to": "n_hostil_inicio",
+                    "then": [
+                        {
+                            "var": "sarn_hostil",
+                            "op": "=",
+                            "value": true
+                        }
+                    ]
+                }
+            ]
+        },
+        {
+            "id": "n_amenaza",
+            "type": "line",
+            "line": {
+                "text": "Podrías. Y yo podría soltar la cuerda del contrapeso.",
+                "speaker": "Sarn"
+            },
+            "editor": {
+                "x": 2100,
+                "y": -290
+            },
+            "out": [
+                {
+                    "to": "n_menu_amenaza"
+                }
+            ]
+        },
+        {
+            "id": "n_menu_amenaza",
+            "type": "choice",
+            "editor": {
+                "x": 2400,
+                "y": -290
+            },
+            "out": [
+                {
+                    "to": "n_disculpa",
+                    "id": "retirar",
+                    "line": {
+                        "text": "Retiro lo dicho."
+                    },
+                    "then": [
+                        {
+                            "var": "confianza",
+                            "op": "-=",
+                            "value": 1
+                        }
+                    ]
+                },
+                {
+                    "to": "n_hostil_inicio",
+                    "id": "insistir",
+                    "line": {
+                        "text": "Lo digo muy en serio."
+                    },
+                    "then": [
+                        {
+                            "var": "sarn_hostil",
+                            "op": "=",
+                            "value": true
+                        },
+                        {
+                            "command": "reproducir_musica",
+                            "args": [
+                                "tension"
+                            ]
+                        }
+                    ]
+                }
+            ]
+        },
+        {
+            "id": "n_disculpa",
+            "type": "line",
+            "line": {
+                "text": "Más te vale. Vuelve con monedas y hablamos.",
+                "speaker": "Sarn"
+            },
+            "editor": {
+                "x": 2700,
+                "y": -420
+            },
+            "out": [
+                {
+                    "to": "n_despedida"
+                }
+            ]
+        },
+        {
+            "id": "n_hostil_inicio",
+            "type": "line",
+            "line": {
+                "text": "Se acabó la charla. Aléjate del puente.",
+                "speaker": "Sarn"
+            },
+            "editor": {
+                "x": 3300,
+                "y": -30
+            },
+            "out": [
+                {
+                    "to": "n_despedida_hostil"
+                }
+            ]
+        },
+        {
+            "id": "n_cruce_libre",
+            "title": "Permiso concedido",
+            "type": "line",
+            "line": {
+                "text": "Pasa. Y hagas lo que hagas, no mires al agua a mitad del vano.",
+                "speaker": "Sarn"
+            },
+            "editor": {
+                "x": 2400,
+                "y": -650
+            },
+            "out": [
+                {
+                    "to": "n_confirmar_cruce"
+                }
+            ]
+        },
+        {
+            "id": "n_confirmar_cruce",
+            "title": "Punto de no retorno",
+            "type": "choice",
+            "editor": {
+                "x": 2700,
+                "y": -650
+            },
+            "out": [
+                {
+                    "to": "n_cruzado",
+                    "id": "cruzar",
+                    "line": {
+                        "text": "Cruzar el puente."
+                    },
+                    "then": [
+                        {
+                            "var": "cruzaste",
+                            "op": "=",
+                            "value": true
+                        },
+                        {
+                            "command": "cambiar_escena",
+                            "args": [
+                                "puente_norte"
+                            ]
+                        }
+                    ]
+                },
+                {
+                    "to": "n_despedida",
+                    "id": "esperar",
+                    "line": {
+                        "text": "Aún no. Volveré."
+                    }
+                }
+            ]
+        },
+        {
+            "id": "n_cruzado",
+            "type": "line",
+            "line": {
+                "text": "Buen viaje. Y no vuelvas por aquí de noche.",
+                "speaker": "Sarn"
+            },
+            "editor": {
+                "x": 3000,
+                "y": -650
+            },
+            "out": [
+                {
+                    "to": "n_fin"
+                }
+            ]
+        },
+        {
+            "id": "n_saludo_repetido",
+            "title": "Vuelta",
+            "type": "line",
+            "line": {
+                "text": "Otra vez tú.",
+                "speaker": "Sarn"
+            },
+            "editor": {
+                "x": 300,
+                "y": 130
+            },
+            "out": [
+                {
+                    "to": "n_hub_repetido"
+                }
+            ]
+        },
+        {
+            "id": "n_hub_repetido",
+            "title": "Según confianza",
+            "type": "hub",
+            "editor": {
+                "x": 600,
+                "y": 130
+            },
+            "out": [
+                {
+                    "to": "n_repetido_confiado",
+                    "when": {
+                        "var": "confianza",
+                        "op": ">=",
+                        "value": 2
+                    }
+                },
+                {
+                    "to": "n_repetido_frio",
+                    "when": {
+                        "var": "confianza",
+                        "op": "<=",
+                        "value": -1
+                    }
+                },
+                {
+                    "to": "n_repetido_neutro"
+                }
+            ]
+        },
+        {
+            "id": "n_repetido_confiado",
+            "type": "line",
+            "line": {
+                "text": "Empiezo a acostumbrarme a tu cara. No sé si es bueno.",
+                "speaker": "Sarn"
+            },
+            "editor": {
+                "x": 900,
+                "y": 0
+            },
+            "out": [
+                {
+                    "to": "n_menu_repetido"
+                }
+            ]
+        },
+        {
+            "id": "n_repetido_frio",
+            "type": "line",
+            "line": {
+                "text": "Habla rápido y no te acerques tanto.",
+                "speaker": "Sarn"
+            },
+            "editor": {
+                "x": 900,
+                "y": 130
+            },
+            "out": [
+                {
+                    "to": "n_menu_repetido"
+                }
+            ]
+        },
+        {
+            "id": "n_repetido_neutro",
+            "type": "line",
+            "line": {
+                "text": "¿Qué quieres ahora?",
+                "speaker": "Sarn"
+            },
+            "editor": {
+                "x": 900,
+                "y": 260
+            },
+            "out": [
+                {
+                    "to": "n_menu_repetido"
+                }
+            ]
+        },
+        {
+            "id": "n_menu_repetido",
+            "type": "choice",
+            "editor": {
+                "x": 1200,
+                "y": 130
+            },
+            "out": [
+                {
+                    "to": "n_menu_sospecha",
+                    "id": "retomar_mentira",
+                    "line": {
+                        "text": "Sobre lo del preboste..."
+                    },
+                    "when": {
+                        "var": "mentiste",
+                        "op": "==",
+                        "value": true
+                    },
+                    "hideWhenUnavailable": true
+                },
+                {
+                    "to": "n_precio",
+                    "id": "preguntar_precio",
+                    "line": {
+                        "text": "¿Cuánto por cruzar?"
+                    }
+                },
+                {
+                    "to": "n_lore",
+                    "id": "lore",
+                    "line": {
+                        "text": "Háblame del río."
+                    }
+                },
+                {
+                    "to": "n_despedida",
+                    "id": "nada",
+                    "line": {
+                        "text": "Nada. Adiós."
+                    }
+                }
+            ]
+        },
+        {
+            "id": "n_lore",
+            "type": "line",
+            "line": {
+                "text": "Baja del deshielo y sube de la marea. Dos aguas peleando en un solo cauce.",
+                "speaker": "Sarn"
+            },
+            "editor": {
+                "x": 1500,
+                "y": 260
+            },
+            "out": [
+                {
+                    "to": "n_lore2"
+                }
+            ]
+        },
+        {
+            "id": "n_lore2",
+            "type": "line",
+            "line": {
+                "text": "Por eso el puente cruje. No es la madera: es el río recordando algo.",
+                "speaker": "Sarn"
+            },
+            "editor": {
+                "x": 1500,
+                "y": 390
+            },
+            "out": [
+                {
+                    "to": "n_menu_repetido"
+                }
+            ]
+        },
+        {
+            "id": "n_saludo_hostil",
+            "title": "Hostil",
+            "type": "line",
+            "line": {
+                "text": "Te dije que te alejaras.",
+                "speaker": "Sarn"
+            },
+            "editor": {
+                "x": 300,
+                "y": 650
+            },
+            "out": [
+                {
+                    "to": "n_menu_hostil"
+                }
+            ]
+        },
+        {
+            "id": "n_menu_hostil",
+            "type": "choice",
+            "editor": {
+                "x": 600,
+                "y": 650
+            },
+            "out": [
+                {
+                    "to": "n_reconciliacion",
+                    "id": "disculpa",
+                    "line": {
+                        "text": "Vengo a disculparme.",
+                        "tags": [
+                            "no con esa reputación"
+                        ]
+                    },
+                    "when": {
+                        "var": "confianza",
+                        "op": ">=",
+                        "value": 0
+                    }
+                },
+                {
+                    "to": "n_despedida_hostil",
+                    "id": "irse",
+                    "line": {
+                        "text": "Solo pasaba."
+                    }
+                }
+            ]
+        },
+        {
+            "id": "n_reconciliacion",
+            "type": "line",
+            "line": {
+                "text": "Hm. Una vez. Y porque el turno es largo y aburrido.",
+                "speaker": "Sarn"
+            },
+            "editor": {
+                "x": 900,
+                "y": 650
+            },
+            "out": [
+                {
+                    "to": "n_despedida",
+                    "then": [
+                        {
+                            "var": "sarn_hostil",
+                            "op": "=",
+                            "value": false
+                        }
+                    ]
+                }
+            ]
+        },
+        {
+            "id": "n_post_cruce",
+            "title": "Ya cruzaste",
+            "type": "line",
+            "line": {
+                "text": "Ya pasaste una vez. Lo que haya al otro lado ya no es asunto mío.",
+                "speaker": "Sarn"
+            },
+            "editor": {
+                "x": 300,
+                "y": 910
+            },
+            "out": [
+                {
+                    "to": "n_fin"
+                }
+            ]
+        },
+        {
+            "id": "n_despedida",
+            "type": "line",
+            "line": {
+                "text": "Anda con ojo.",
+                "speaker": "Sarn"
+            },
+            "editor": {
+                "x": 3600,
+                "y": 130
+            },
+            "out": [
+                {
+                    "to": "n_fin"
+                }
+            ]
+        },
+        {
+            "id": "n_despedida_hostil",
+            "type": "line",
+            "line": {
+                "text": "...",
+                "speaker": "Sarn"
+            },
+            "editor": {
+                "x": 3600,
+                "y": 390
+            },
+            "out": [
+                {
+                    "to": "n_fin"
+                }
+            ]
+        },
+        {
+            "id": "n_fin",
+            "title": "Fin",
+            "type": "hub",
+            "fallthrough": "end",
+            "editor": {
+                "x": 3900,
+                "y": 260
+            },
+            "out": []
+        }
+    ]
 }

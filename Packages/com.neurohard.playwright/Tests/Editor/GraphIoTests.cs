@@ -123,5 +123,28 @@ namespace Neurohard.Playwright.Tests
             Assert.AreEqual(2.5, ((Effect.Assign)efectos[2]).Value);
             Assert.AreEqual(10, ((Effect.Assign)efectos[3]).Value);
         }
+
+        [Test]
+        public void RoundTrip_ConservaLaReferencia()
+        {
+            var g = new DialogueGraph { Start = "a" };
+            var a = g.Add(new GraphNode { Id = "a", Type = NodeType.Line, Line = new GraphLine { Text = "Hola" } });
+            a.Out.Add(new GraphEdge
+            {
+                To = "a",
+                When = new Condition.Compare("oro", ComparisonOp.GreaterOrEqual, new VariableRef("precio")),
+                Then = { new Effect.Assign("oro", AssignOp.Subtract, new VariableRef("precio")) }
+            });
+
+            var json1 = GraphWriter.ToJson(g);
+            var reloaded = GraphReader.FromJson(json1);
+
+            var when = (Condition.Compare)reloaded.Find("a").Out[0].When;
+            Assert.IsInstanceOf<VariableRef>(when.Value);
+            Assert.AreEqual("precio", ((VariableRef)when.Value).Name);
+            Assert.AreEqual(json1, GraphWriter.ToJson(reloaded));
+        }
     }
+
+
 }

@@ -30,3 +30,20 @@ Motor de grafos de conversación como `IDialogueSource` para Prompter.
   combinadas con all/any/not.
 - Sin editor gráfico, sin subgrafos y sin conversaciones anidadas.
 - Autoría a mano en JSON.
+
+
+## [Unreleased]
+
+### Changed
+- Una variable sin definir se compara como 0 frente a valores numéricos, y como
+  cadena vacía frente a cadenas. Antes cualquier comparación con una variable
+  inexistente daba false. Esto permite escribir `contador == 0` en lugar de
+  `{any: [{!exists}, {== 0}]}`.
+- `exists` / `!exists` pasan a ser la única forma de distinguir "sin definir"
+  de "cero".
+
+### Fixed
+- `Add` degradaba a int cualquier resultado sin decimales, cambiando el tipo de
+  variables double a mitad de partida.
+- `VariableInventory` marcaba como "nunca leída" una variable usada solo en
+  operaciones `+=` o `-=`.

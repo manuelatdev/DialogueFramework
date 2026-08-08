@@ -428,8 +428,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: Assembly-CSharp::UiGraphDemo
   graphAsset: {fileID: 11400000, guid: def33de5581514f6c83dc916c262ddbb, type: 2}
   presenter: {fileID: 1566678581}
-  oroInicial: 50
-  reputacionInicial: 0
+  oroInicial: 1
 --- !u!114 &1566678581
 MonoBehaviour:
   m_ObjectHideFlags: 0

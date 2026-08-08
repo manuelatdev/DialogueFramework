@@ -21,30 +21,27 @@ namespace Neurohard.Playwright
         }
 
         public sealed class Compare : Condition
-{
-    public string Variable { get; }
-    public ComparisonOp Op { get; }
-    public object Value { get; }
+        {
+            public string Variable { get; }
+            public ComparisonOp Op { get; }
+            public object Value { get; }
 
-    public Compare(string variable, ComparisonOp op, object value)
-    {
-        if (string.IsNullOrEmpty(variable))
-            throw new ArgumentException("Condición sin nombre de variable.", nameof(variable));
-        Variable = variable; Op = op; Value = value;
-    }
+            public Compare(string variable, ComparisonOp op, object value)
+            {
+                if (string.IsNullOrEmpty(variable))
+                    throw new ArgumentException("Condición sin nombre de variable.", nameof(variable));
+                Variable = variable; Op = op; Value = value;
+            }
 
-    public override bool Evaluate(IVariableStorage vars)
-    {
-        if (Op == ComparisonOp.Exists) return vars.Has(Variable);
-        if (Op == ComparisonOp.NotExists) return !vars.Has(Variable);
+            public override bool Evaluate(IVariableStorage vars)
+            {
+                if (Op == ComparisonOp.Exists) return vars.Has(Variable);
+                if (Op == ComparisonOp.NotExists) return !vars.Has(Variable);
 
-        // EXTRAEMOS de forma segura. Si no existe, 'actual' será null.
-        vars.TryGet<object>(Variable, out var actual);
-        
-        // DELEGAMOS la decisión a la matemática de variables
-        return VariableMath.Compare(actual, Value, Op);
-    }
-}
+                vars.TryGet<object>(Variable, out var actual);
+                return VariableMath.Compare(actual, ValueResolver.Resolve(Value, vars), Op);
+            }
+        }
 
         public sealed class All : Condition
         {

@@ -29,19 +29,16 @@ namespace Neurohard.Playwright
 
                     foreach (var effect in edge.Then)
                     {
-                        if (effect is Effect.Assign assign)
-                        {
-                            var usage = Get(result, assign.Variable);
+                        if (!(effect is Effect.Assign assign)) continue;
 
-                            // Siempre es una escritura
-                            usage.WrittenIn.Add(node.Id);
+                        var usage = Get(result, assign.Variable);
+                        usage.WrittenIn.Add(node.Id);
 
-                            // Si es una modificación (+ o -), también requiere leer el valor previo
-                            if (assign.Op == AssignOp.Add || assign.Op == AssignOp.Subtract)
-                            {
-                                usage.ReadIn.Add(node.Id);
-                            }
-                        }
+                        if (assign.Op == AssignOp.Add || assign.Op == AssignOp.Subtract)
+                            usage.ReadIn.Add(node.Id);
+
+                        if (assign.Value is VariableRef r)
+                            Get(result, r.Name).ReadIn.Add(node.Id);
                     }
                 }
 
@@ -53,7 +50,10 @@ namespace Neurohard.Playwright
         {
             switch (condition)
             {
-                case Condition.Compare cmp: Get(result, cmp.Variable).ReadIn.Add(nodeId); break;
+                case Condition.Compare cmp:
+                    Get(result, cmp.Variable).ReadIn.Add(nodeId);
+                    if (cmp.Value is VariableRef vr) Get(result, vr.Name).ReadIn.Add(nodeId);
+                    break;
                 case Condition.Not not: CollectFromCondition(not.Inner, nodeId, result); break;
                 case Condition.All all:
                     foreach (var c in all.Items) CollectFromCondition(c, nodeId, result);
