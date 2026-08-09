@@ -28,7 +28,7 @@ namespace Neurohard.Playwright.Io
                 .Set("id", node.Id)
                 .Set("title", node.Title)
                 .Set("type", TypeText(node.Type))
-                .Set("line", node.Line != null ? Line(node.Line) : null)
+                .Set("line", HasContent(node.Line) ? Line(node.Line) : null)
                 .SetIf(node.Fallthrough == FallthroughMode.End, "fallthrough", JsonOut.Str("end"))
                 .Set("editor", new JsonObj()
                     .Set("x", node.Editor.X)
@@ -53,7 +53,7 @@ namespace Neurohard.Playwright.Io
             var obj = new JsonObj()
                 .Set("to", edge.To)
                 .Set("id", edge.OptionId)
-                .Set("line", edge.Line != null ? Line(edge.Line) : null)
+                .Set("line", HasContent(edge.Line) ? Line(edge.Line) : null)
                 .Set("reason", edge.Reason)
                 .SetIf(edge.HideWhenUnavailable, "hideWhenUnavailable", JsonOut.Bool(true));
 
@@ -165,5 +165,9 @@ namespace Neurohard.Playwright.Io
             ComparisonOp.Exists => "exists",
             _ => "!exists"
         };
+
+        private static bool HasContent(GraphLine line)
+    => line != null &&
+       (!string.IsNullOrEmpty(line.Text) || !string.IsNullOrEmpty(line.LineId));
     }
 }

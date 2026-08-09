@@ -1,4 +1,6 @@
+using System;
 using System.Collections.Generic;
+using Neurohard.Playwright.Io;
 using UnityEditor.Experimental.GraphView;
 using UnityEngine;
 using UnityEngine.UIElements;
@@ -12,6 +14,9 @@ namespace Neurohard.Playwright.Editor
         public GraphNode Model { get; }
         public Port Input { get; }
         public List<Port> Outputs { get; } = new List<Port>();
+
+        /// <summary>Fábrica de transacciones, inyectada por la vista.</summary>
+        public Func<GraphTransaction> BeginTransaction { get; set; }
 
         public DialogueNodeView(GraphNode model)
         {
@@ -28,8 +33,12 @@ namespace Neurohard.Playwright.Editor
 
             AddBadge(TypeLabel(model.Type), TypeColor(model.Type));
 
-            if (model.Line != null)
-                AddPreview(model.Line);
+            // Los line siempre; los choice solo si ya tienen prompt; los hub nunca.
+            if (model.Type == NodeType.Line || model.Line != null)
+                AddContentFields(model);
+
+            if (model.Type != NodeType.Hub)
+                AddContentFields(model);
 
             for (var i = 0; i < model.Out.Count; i++)
                 AddOutputPort(model.Out[i], i, model.Type);
@@ -102,29 +111,70 @@ namespace Neurohard.Playwright.Editor
             Outputs.Add(port);
         }
 
-        private void AddPreview(GraphLine line)
+        private void AddContentFields(GraphNode model)
         {
-            var fullText = line.Text ?? line.LineId ?? string.Empty;
-            var displayText = fullText;
+            var container = new VisualElement();
+            container.style.marginLeft = 6;
+            container.style.marginRight = 6;
+            container.style.marginTop = 4;
+            container.style.marginBottom = 4;
+            container.style.minWidth = 220;
 
-            if (displayText.Length > 70)
-                displayText = displayText.Substring(0, 67) + "…";
+            // Ojo: no crear la línea aquí. Mostrar un nodo no debe modificar el modelo.
+            var speaker = new TextField { value = model.Line?.Speaker ?? string.Empty };
+            speaker.style.marginBottom = 2;
+            speaker.tooltip = "Hablante. Vacío para narración.";
 
-            var labelText = string.IsNullOrEmpty(line.Speaker) ? displayText : $"{line.Speaker}: {displayText}";
-            var label = new Label(labelText);
+            BindEditing(speaker, valor =>
+            {
+                var limpio = string.IsNullOrWhiteSpace(valor) ? null : valor;
+                if (limpio == null && model.Line == null) return;
+                EnsureLine(model).Speaker = limpio;
+            });
 
-            // UX: Mostrar el texto completo al pasar el ratón
-            if (fullText.Length > 70)
-                label.tooltip = string.IsNullOrEmpty(line.Speaker) ? fullText : $"{line.Speaker}: {fullText}";
+            container.Add(speaker);
 
-            label.style.whiteSpace = WhiteSpace.Normal;
-            label.style.maxWidth = 220;
-            label.style.marginLeft = 6;
-            label.style.marginRight = 6;
-            label.style.marginTop = 4;
-            label.style.marginBottom = 4;
-            label.style.opacity = 0.85f;
-            extensionContainer.Add(label);
+            var text = new TextField { value = model.Line?.Text ?? string.Empty, multiline = true };
+            text.style.whiteSpace = WhiteSpace.Normal;
+            text.style.minHeight = 44;
+            text.tooltip = "Texto de la línea.";
+
+            BindEditing(text, valor =>
+            {
+                if (string.IsNullOrEmpty(valor) && model.Line == null) return;
+                EnsureLine(model).Text = valor;
+            });
+
+            container.Add(text);
+            extensionContainer.Add(container);
+        }
+
+        /// <summary>Crea la línea solo cuando de verdad hace falta escribir en ella.</summary>
+        private static GraphLine EnsureLine(GraphNode model)
+            => model.Line ?? (model.Line = new GraphLine());
+
+        /// <summary>
+        /// Una transacción por sesión de edición: se abre al enfocar y se cierra al
+        /// salir. Si el texto no cambió, la transacción se descarta sola.
+        /// </summary>
+        private void BindEditing(TextField field, Action<string> apply)
+        {
+            GraphTransaction transaction = null;
+
+            field.RegisterCallback<FocusInEvent>(_ => transaction = BeginTransaction?.Invoke());
+
+            field.RegisterCallback<FocusOutEvent>(_ =>
+            {
+                transaction?.Dispose();
+                transaction = null;
+            });
+
+            field.RegisterValueChangedCallback(evt => apply(evt.newValue));
+        }
+        private static void AddPlaceholder(TextField field, string texto)
+        {
+            var input = field.Q(TextField.textInputUssName);
+            if (input != null) input.tooltip = texto;
         }
 
         private void AddBadge(string text, Color color)

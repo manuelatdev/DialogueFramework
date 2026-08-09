@@ -1,4 +1,5 @@
 using System.Collections.Generic;
+using System;
 
 namespace Neurohard.Playwright.Io
 {
@@ -16,17 +17,6 @@ namespace Neurohard.Playwright.Io
 
         public bool CanUndo => _undo.Count > 0;
         public bool CanRedo => _redo.Count > 0;
-
-        /// <summary>Registra el estado ANTES de aplicar una operación.</summary>
-        public void Record(DialogueGraph graph)
-        {
-            if (graph == null) return;
-
-            _undo.Add(GraphWriter.ToJson(graph));
-            _redo.Clear();
-
-            if (_undo.Count > MaxDepth) _undo.RemoveAt(0);
-        }
 
         /// <summary>Devuelve el JSON anterior, o null si no hay nada que deshacer.</summary>
         public string Undo(DialogueGraph current)
@@ -55,10 +45,16 @@ namespace Neurohard.Playwright.Io
             _redo.Clear();
         }
 
-        /// <summary>Descarta la última instantánea: la operación no cambió nada.</summary>
-        public void Discard()
+        /// <summary>Abre una transacción. Úsala con using.</summary>
+        public GraphTransaction Begin(DialogueGraph graph, Action onChanged = null)
+            => new GraphTransaction(this, graph, onChanged);
+
+        /// <summary>Registra un estado previo. Lo llama GraphTransaction al cerrarse.</summary>
+        internal void Commit(string beforeJson)
         {
-            if (_undo.Count > 0) _undo.RemoveAt(_undo.Count - 1);
+            _undo.Add(beforeJson);
+            _redo.Clear();
+            if (_undo.Count > MaxDepth) _undo.RemoveAt(0);
         }
     }
 }

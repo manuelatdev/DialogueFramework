@@ -175,30 +175,50 @@ namespace Neurohard.Playwright.Tests
             var g = new DialogueGraph { Start = "a" };
             g.Add(new GraphNode { Id = "a", Type = NodeType.Line, Line = new GraphLine { Text = "uno" } });
 
-            history.Record(g);                      // estado con 1 nodo
-            g.Add(new GraphNode { Id = "b", Type = NodeType.Line, Line = new GraphLine { Text = "dos" } });
+            using (history.Begin(g))
+                g.Add(new GraphNode { Id = "b", Type = NodeType.Line, Line = new GraphLine { Text = "dos" } });
 
             Assert.IsTrue(history.CanUndo);
+
             var previo = GraphReader.FromJson(history.Undo(g));
             Assert.AreEqual(1, previo.Nodes.Count);
 
             Assert.IsTrue(history.CanRedo);
+
             var rehecho = GraphReader.FromJson(history.Redo(previo));
             Assert.AreEqual(2, rehecho.Nodes.Count);
         }
 
         [Test]
-        public void RegistrarAlgoNuevo_DescartaElRedo()
+        public void UnaTransaccionSinCambios_NoRegistraNada()
         {
             var history = new GraphHistory();
             var g = new DialogueGraph { Start = "a" };
             g.Add(new GraphNode { Id = "a", Type = NodeType.Line, Line = new GraphLine { Text = "uno" } });
 
-            history.Record(g);
-            history.Undo(g);
+            var avisado = false;
+            using (history.Begin(g, () => avisado = true)) { /* nadie toca el grafo */ }
+
+            Assert.IsFalse(history.CanUndo);
+            Assert.IsFalse(avisado, "No debe marcarse como sucio si nada cambió.");
+        }
+
+        [Test]
+        public void UnaOperacionNueva_DescartaElRedo()
+        {
+            var history = new GraphHistory();
+            var g = new DialogueGraph { Start = "a" };
+            g.Add(new GraphNode { Id = "a", Type = NodeType.Line, Line = new GraphLine { Text = "uno" } });
+
+            using (history.Begin(g))
+                g.Add(new GraphNode { Id = "b", Type = NodeType.Line, Line = new GraphLine { Text = "dos" } });
+
+            var previo = GraphReader.FromJson(history.Undo(g));
             Assert.IsTrue(history.CanRedo);
 
-            history.Record(g);
+            using (history.Begin(previo))
+                previo.Add(new GraphNode { Id = "c", Type = NodeType.Line, Line = new GraphLine { Text = "tres" } });
+
             Assert.IsFalse(history.CanRedo);
         }
     }

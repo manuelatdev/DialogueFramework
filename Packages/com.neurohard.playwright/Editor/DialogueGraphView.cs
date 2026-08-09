@@ -3,6 +3,7 @@ using UnityEditor.Experimental.GraphView;
 using UnityEngine;
 using UnityEngine.UIElements;
 using System.Linq;
+using Neurohard.Playwright.Io;
 
 namespace Neurohard.Playwright.Editor
 {
@@ -29,14 +30,12 @@ namespace Neurohard.Playwright.Editor
         private bool _needsFraming;
         private bool _reloading;
 
-        /// <summary>Se emite cuando el usuario modifica algo que hay que guardar.</summary>
-        public event System.Action Modified;
-        /// <summary>Se emite justo antes de modificar el grafo, para registrar el undo.</summary>
-        public event System.Action WillModify;
-        /// <summary>La operación no llegó a cambiar nada: descarta la instantánea.</summary>
-        public event System.Action Aborted;
-        /// <summary>El borrado cambió la forma del grafo: la ventana debe recargar.</summary>
+/// <summary>El borrado o la reconexión cambió la forma del grafo.</summary>
         public event System.Action StructureChanged;
+
+        /// <summary>La vista pide una transacción antes de modificar el modelo.</summary>
+        public System.Func<GraphTransaction> BeginTransaction { get; set; }
+        
 
         public DialogueGraphView()
         {
@@ -62,7 +61,8 @@ namespace Neurohard.Playwright.Editor
 
             RegisterCallback<KeyDownEvent>(evt =>
             {
-                if (evt.target is TextField || evt.target is TextElement) return;
+                // No interferir mientras se escribe en un campo de texto.
+                if (evt.target is VisualElement ve && ve.GetFirstAncestorOfType<TextField>() != null) return;
 
                 switch (evt.keyCode)
                 {
@@ -105,12 +105,12 @@ namespace Neurohard.Playwright.Editor
 
             if (graph == null) return;
 
-            foreach (var node in graph.Nodes)
-            {
-                var view = new DialogueNodeView(node);
-                _nodes[node.Id] = view;
-                AddElement(view);
-            }
+foreach (var node in graph.Nodes)
+{
+    var view = new DialogueNodeView(node) { BeginTransaction = BeginTransaction };
+    _nodes[node.Id] = view;
+    AddElement(view);
+}
 
             foreach (var node in graph.Nodes)
             {
@@ -230,104 +230,74 @@ namespace Neurohard.Playwright.Editor
             FrameSelection();
         }
 
-        private GraphViewChange OnGraphViewChanged(GraphViewChange change)
+private GraphViewChange OnGraphViewChanged(GraphViewChange change)
+{
+    if (_graph == null || _reloading) return change;
+
+    var hayMovidos = change.movedElements != null && change.movedElements.Count > 0;
+    var hayBorrados = change.elementsToRemove != null && change.elementsToRemove.Count > 0;
+    var hayConexiones = change.edgesToCreate != null && change.edgesToCreate.Count > 0;
+
+    if (!hayMovidos && !hayBorrados && !hayConexiones) return change;
+
+    // La transacción compara el JSON al cerrarse: si nada cambió, se descarta sola.
+    using (BeginTransaction?.Invoke())
+    {
+        // Primero las conexiones: una reconexión llega como borrado + creación,
+        // y si borramos antes, la arista del modelo desaparece y no hay qué redirigir.
+        if (hayConexiones) ApplyConnections(change.edgesToCreate);
+        if (hayBorrados) ApplyRemovals(change.elementsToRemove);
+
+        if (hayMovidos)
+            foreach (var element in change.movedElements)
+                if (element is DialogueNodeView node) node.SyncPositionToModel();
+    }
+
+    if (hayBorrados || hayConexiones)
+        schedule.Execute(() => StructureChanged?.Invoke()).ExecuteLater(1);
+
+    return change;
+}
+
+private void ApplyConnections(List<Edge> edges)
+{
+    foreach (var edge in edges)
+    {
+        if (!(edge.output?.userData is GraphEdge model)) continue;
+        if (!(edge.input?.node is DialogueNodeView destino)) continue;
+
+        if (_recentlyRemoved.TryGetValue(model, out var location))
         {
-            if (_graph == null || _reloading) return change;
+            var owner = _graph.Find(location.ownerId);
+            if (owner != null && !owner.Out.Contains(model))
+                owner.Out.Insert(Mathf.Min(location.index, owner.Out.Count), model);
 
-            var hayMovidos = change.movedElements != null && change.movedElements.Count > 0;
-            var hayBorrados = change.elementsToRemove != null && change.elementsToRemove.Count > 0;
-            var hayConexiones = change.edgesToCreate != null && change.edgesToCreate.Count > 0;
-
-            if (!hayMovidos && !hayBorrados && !hayConexiones) return change;
-
-            WillModify?.Invoke();
-
-            var cambiado = false;
-
-            // Primero las conexiones: una reconexión llega como borrado + creación,
-            // y si borramos antes, la arista del modelo desaparece y no hay qué redirigir.
-            if (hayConexiones) cambiado |= ApplyConnections(change.edgesToCreate);
-
-            if (hayBorrados) cambiado |= ApplyRemovals(change.elementsToRemove);
-
-            if (hayMovidos)
-                foreach (var element in change.movedElements)
-                    if (element is DialogueNodeView node && node.SyncPositionToModel())
-                        cambiado = true;
-
-            if (cambiado) Modified?.Invoke();
-            else Aborted?.Invoke();
-
-            // Un borrado deja aristas huérfanas o la reconexión modifica el flujo: 
-            // que la ventana reconstruya la vista.
-            if ((hayBorrados || hayConexiones) && cambiado)
-                schedule.Execute(() => StructureChanged?.Invoke()).ExecuteLater(1);
-
-            return change;
+            _recentlyRemoved.Remove(model);
         }
 
-        private bool ApplyConnections(List<Edge> edges)
+        model.To = destino.Model.Id;
+    }
+}
+
+private void ApplyRemovals(List<GraphElement> elements)
+{
+    foreach (var element in elements)
+    {
+        switch (element)
         {
-            var cambiado = false;
+            case DialogueNodeView node:
+                if (_graph.Remove(node.Model.Id)) _nodes.Remove(node.Model.Id);
+                break;
 
-            foreach (var edge in edges)
-            {
-                if (!(edge.output?.userData is GraphEdge model)) continue;
-                if (!(edge.input?.node is DialogueNodeView destino)) continue;
-
-                // Si venía de una reconexión, el borrado previo la sacó del modelo.
-                if (_recentlyRemoved.TryGetValue(model, out var location))
-                {
-                    var owner = _graph.Find(location.ownerId);
-                    if (owner != null && !owner.Out.Contains(model))
-                    {
-                        // El orden de las aristas es semántico en line y hub.
-                        owner.Out.Insert(Mathf.Min(location.index, owner.Out.Count), model);
-                        cambiado = true;
-                    }
-                    _recentlyRemoved.Remove(model);
-                }
-
-                if (model.To != destino.Model.Id)
-                {
-                    model.To = destino.Model.Id;
-                    cambiado = true;
-                }
-            }
-
-            return cambiado;
+            case Edge edge when edge.userData is GraphEdge model:
+                var location = LocateEdge(model);
+                if (RemoveEdgeFromModel(model) && location.ownerId != null)
+                    _recentlyRemoved[model] = location;
+                _edges.RemoveAll(e => e.model == model);
+                break;
         }
-
-        private bool ApplyRemovals(List<GraphElement> elements)
-        {
-            var cambiado = false;
-
-            foreach (var element in elements)
-            {
-                switch (element)
-                {
-                    case DialogueNodeView node:
-                        if (_graph.Remove(node.Model.Id))
-                        {
-                            _nodes.Remove(node.Model.Id);
-                            cambiado = true;
-                        }
-                        break;
-
-                    case Edge edge when edge.userData is GraphEdge model:
-                        var location = LocateEdge(model);
-                        if (RemoveEdgeFromModel(model))
-                        {
-                            if (location.ownerId != null) _recentlyRemoved[model] = location;
-                            cambiado = true;
-                        }
-                        _edges.RemoveAll(e => e.model == model);
-                        break;
-                }
-            }
-
-            return cambiado;
-        }
+    }
+}
 
         private bool RemoveEdgeFromModel(GraphEdge model)
         {

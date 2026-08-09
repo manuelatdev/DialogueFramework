@@ -106,16 +106,12 @@ namespace Neurohard.Playwright.Editor
 
             _view = new DialogueGraphView();
             _view.style.flexGrow = 1;
-            _view.WillModify += RecordUndo;
-            _view.Modified += MarkDirty;
-            _view.Aborted += _history.Discard;
+            _view.BeginTransaction = Begin;
             _view.StructureChanged += () =>
-            {
-                if (_asset != null && _asset.TryGetGraph(out var g, out _)) ShowGraph(g, encuadrar: false);
-            };
+{
+    if (_asset != null && _asset.TryGetGraph(out var g, out _)) ShowGraph(g, encuadrar: false);
+};
             body.Add(_view);
-
-            
 
             _panel = new SimulationPanel();
             _panel.Changed += RunSimulation;
@@ -250,14 +246,10 @@ namespace Neurohard.Playwright.Editor
 
         // --- historial --------------------------------------------------------
 
-        /// <summary>Registra el estado actual ANTES de que la vista lo modifique.</summary>
-        private void RecordUndo()
+        private void Undo()
         {
-            if (_asset != null && _asset.TryGetGraph(out var graph, out _))
-                _history.Record(graph);
+            ApplySnapshot(g => _history.Undo(g));
         }
-
-        private void Undo() => ApplySnapshot(g => _history.Undo(g));
         private void Redo() => ApplySnapshot(g => _history.Redo(g));
 
         private void ApplySnapshot(System.Func<DialogueGraph, string> operation)
@@ -368,6 +360,20 @@ namespace Neurohard.Playwright.Editor
         {
             if (_view == null) return;
             _view.SetActiveNode(EditorApplication.isPlaying ? _asset?.ActiveSource?.CurrentNodeId : null);
+        }
+
+        /// <summary>Envuelve una operación en una transacción deshacible.</summary>
+        private GraphTransaction Begin()
+        {
+            if (_asset == null || !_asset.TryGetGraph(out var graph, out _))
+            {
+                return null;
+            }
+
+            return _history.Begin(graph, () =>
+            {
+                MarkDirty();
+            });
         }
     }
 }
