@@ -115,6 +115,8 @@ namespace Neurohard.Playwright.Editor
             };
             body.Add(_view);
 
+            
+
             _panel = new SimulationPanel();
             _panel.Changed += RunSimulation;
             body.Add(_panel);

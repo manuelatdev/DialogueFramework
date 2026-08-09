@@ -16,6 +16,13 @@ namespace Neurohard.Playwright.Editor
         private readonly List<(Edge view, GraphEdge model, string ownerId)> _edges =
             new List<(Edge, GraphEdge, string)>();
 
+        /// <summary>
+        /// Aristas borradas del modelo en el ciclo actual. Una reconexión llega como
+        /// dos invocaciones separadas: primero el borrado, después la creación.
+        /// </summary>
+        private readonly Dictionary<GraphEdge, (string ownerId, int index)> _recentlyRemoved =
+            new Dictionary<GraphEdge, (string, int)>();
+
         private static readonly Color PathColor = new Color(0.4f, 0.9f, 0.5f);
 
         private string _activeNodeId;
@@ -74,11 +81,17 @@ namespace Neurohard.Playwright.Editor
             });
         }
 
-        /// <summary>Sin conexiones nuevas todavía: llegan con la edición estructural.</summary>
+        /// <summary>
+        /// Cualquier entrada de otro nodo. Los bucles de un nodo consigo mismo se
+        /// excluyen: en un diálogo casi siempre son un error de autoría.
+        /// </summary>
         public override List<Port> GetCompatiblePorts(Port startPort, NodeAdapter adapter)
-            => new List<Port>();
+            => ports.ToList()
+                    .Where(p => p.direction != startPort.direction && p.node != startPort.node)
+                    .ToList();
 
-public void Load(DialogueGraph graph, bool encuadrar = true)        {
+        public void Load(DialogueGraph graph, bool encuadrar = true)
+        {
             _graph = graph;
 
             _reloading = true;
@@ -87,6 +100,7 @@ public void Load(DialogueGraph graph, bool encuadrar = true)        {
 
             _nodes.Clear();
             _edges.Clear();
+            _recentlyRemoved.Clear();
             _activeNodeId = null;
 
             if (graph == null) return;
@@ -120,7 +134,7 @@ public void Load(DialogueGraph graph, bool encuadrar = true)        {
                 start.title = "▶ " + start.title;
 
             // Marcar que necesitamos reencuadrar cuando UI Toolkit termine de calcular tamaños
-    _needsFraming = encuadrar;
+            _needsFraming = encuadrar;
         }
 
         private void OnGeometryChanged(GeometryChangedEvent evt)
@@ -222,13 +236,17 @@ public void Load(DialogueGraph graph, bool encuadrar = true)        {
 
             var hayMovidos = change.movedElements != null && change.movedElements.Count > 0;
             var hayBorrados = change.elementsToRemove != null && change.elementsToRemove.Count > 0;
+            var hayConexiones = change.edgesToCreate != null && change.edgesToCreate.Count > 0;
 
-            if (!hayMovidos && !hayBorrados) return change;
+            if (!hayMovidos && !hayBorrados && !hayConexiones) return change;
 
-            // Instantánea previa; se descarta si al final no cambió nada.
             WillModify?.Invoke();
 
             var cambiado = false;
+
+            // Primero las conexiones: una reconexión llega como borrado + creación,
+            // y si borramos antes, la arista del modelo desaparece y no hay qué redirigir.
+            if (hayConexiones) cambiado |= ApplyConnections(change.edgesToCreate);
 
             if (hayBorrados) cambiado |= ApplyRemovals(change.elementsToRemove);
 
@@ -240,11 +258,44 @@ public void Load(DialogueGraph graph, bool encuadrar = true)        {
             if (cambiado) Modified?.Invoke();
             else Aborted?.Invoke();
 
-            // Un borrado deja aristas huérfanas: que la ventana reconstruya la vista.
-            if (hayBorrados && cambiado)
+            // Un borrado deja aristas huérfanas o la reconexión modifica el flujo: 
+            // que la ventana reconstruya la vista.
+            if ((hayBorrados || hayConexiones) && cambiado)
                 schedule.Execute(() => StructureChanged?.Invoke()).ExecuteLater(1);
 
             return change;
+        }
+
+        private bool ApplyConnections(List<Edge> edges)
+        {
+            var cambiado = false;
+
+            foreach (var edge in edges)
+            {
+                if (!(edge.output?.userData is GraphEdge model)) continue;
+                if (!(edge.input?.node is DialogueNodeView destino)) continue;
+
+                // Si venía de una reconexión, el borrado previo la sacó del modelo.
+                if (_recentlyRemoved.TryGetValue(model, out var location))
+                {
+                    var owner = _graph.Find(location.ownerId);
+                    if (owner != null && !owner.Out.Contains(model))
+                    {
+                        // El orden de las aristas es semántico en line y hub.
+                        owner.Out.Insert(Mathf.Min(location.index, owner.Out.Count), model);
+                        cambiado = true;
+                    }
+                    _recentlyRemoved.Remove(model);
+                }
+
+                if (model.To != destino.Model.Id)
+                {
+                    model.To = destino.Model.Id;
+                    cambiado = true;
+                }
+            }
+
+            return cambiado;
         }
 
         private bool ApplyRemovals(List<GraphElement> elements)
@@ -264,7 +315,12 @@ public void Load(DialogueGraph graph, bool encuadrar = true)        {
                         break;
 
                     case Edge edge when edge.userData is GraphEdge model:
-                        if (RemoveEdgeFromModel(model)) cambiado = true;
+                        var location = LocateEdge(model);
+                        if (RemoveEdgeFromModel(model))
+                        {
+                            if (location.ownerId != null) _recentlyRemoved[model] = location;
+                            cambiado = true;
+                        }
                         _edges.RemoveAll(e => e.model == model);
                         break;
                 }
@@ -278,6 +334,16 @@ public void Load(DialogueGraph graph, bool encuadrar = true)        {
             foreach (var node in _graph.Nodes)
                 if (node.Out.Remove(model)) return true;
             return false;
+        }
+
+        private (string ownerId, int index) LocateEdge(GraphEdge model)
+        {
+            foreach (var node in _graph.Nodes)
+            {
+                var i = node.Out.IndexOf(model);
+                if (i >= 0) return (node.Id, i);
+            }
+            return (null, -1);
         }
     }
 }
