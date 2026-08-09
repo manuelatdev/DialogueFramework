@@ -147,6 +147,7 @@ namespace Neurohard.Playwright.Io
         {
             json.AsObject($"Una condición de '{nodeId}'");
 
+            if (json.Has("always")) return Condition.Always.Instance;
             if (json.Has("all")) return new Condition.All(ReadConditionList(json["all"], nodeId));
             if (json.Has("any")) return new Condition.Any(ReadConditionList(json["any"], nodeId));
             if (json.Has("not")) return new Condition.Not(ReadCondition(json["not"], nodeId));
@@ -222,7 +223,8 @@ namespace Neurohard.Playwright.Io
             }
 
             var variable = (json["var"] ?? throw new GraphFormatException(
-                $"Un efecto de '{nodeId}' no tiene ni 'var' ni 'command'.", json.Line))
+                $"Una condición de '{nodeId}' no tiene 'var', 'query', 'all', 'any', 'not' ni 'always'.",
+                json.Line))
                 .AsString("El nombre de variable");
 
             var opText = json.Has("op") ? json["op"].AsString("El operador") : "=";

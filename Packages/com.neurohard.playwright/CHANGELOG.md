@@ -3,6 +3,42 @@
 Formato basado en [Keep a Changelog](https://keepachangelog.com/es-ES/1.1.0/).
 Este proyecto sigue [Versionado Semántico](https://semver.org/lang/es/).
 
+## [0.5.0]
+
+El visor pasa a ser editor.
+
+### Added
+- Panel de consultas simuladas: casillas y campos por cada invocación concreta
+  (`puede_comprar(cuerda)` es distinta de `puede_comprar(amuleto)`), para poder
+  simular grafos que dependen del juego.
+- `QueryInventory`: lista las consultas que exige un grafo. Es, de hecho, el
+  contrato que el `IQueryResolver` del juego debe implementar.
+- Nodos movibles con posiciones persistentes en el bloque `editor` del JSON.
+- Guardado al JSON desde la ventana, con la API nativa `hasUnsavedChanges` /
+  `SaveChanges` de Unity.
+- `GraphHistory`: deshacer y rehacer por instantáneas del JSON completo.
+- `DialogueGraphAsset.Save()` genera el `.json` automáticamente si el asset se
+  creó sin uno, y `ReplaceGraph` permite al editor sustituir la caché.
+- `TryGetGraph`: variante no lanzante para el editor, que un JSON roto no debe
+  reventar el bucle de dibujado del inspector.
+
+### Fixed
+- `OnValidate` invalidaba la caché en cada recompilación, destruyendo los
+  cambios sin guardar. Ahora solo invalida si el TextAsset cambió de verdad.
+- El inspector personalizado invalidaba la caché al seleccionar el asset, con
+  el mismo efecto.
+- Los cambios sin guardar sobreviven a los domain reloads mediante una
+  instantánea serializada en la ventana.
+- `Condition.Always` anidada dentro de `all`/`any` se serializaba como un objeto
+  vacío que el lector no sabía interpretar. Ahora se escribe como
+  `{ "always": true }`.
+
+### Limitaciones conocidas
+- Sin edición estructural: no se pueden crear, borrar ni conectar nodos.
+- El historial se pierde al recompilar; los cambios no.
+- Deshacer puede registrar entradas vacías si un arrastre no llega a mover
+  nada. Se resolverá al implementar la edición estructural.
+
 ## [0.4.0]
 
 El grafo puede preguntar al juego.

@@ -70,6 +70,8 @@ namespace Neurohard.Playwright.Io
         {
             switch (condition)
             {
+                case Condition.Always _:
+                    return new JsonObj().Set("always", JsonOut.Bool(true));
                 case Condition.All all:
                     return new JsonObj().Set("all", Arr(all.Items, WriteCondition));
 

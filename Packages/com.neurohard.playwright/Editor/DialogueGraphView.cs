@@ -42,9 +42,11 @@ namespace Neurohard.Playwright.Editor
 
             // Escuchar cambios de geometría para hacer el FrameAll de forma segura
             RegisterCallback<GeometryChangedEvent>(OnGeometryChanged);
+            RegisterCallback<DetachFromPanelEvent>(_ =>
+                UnregisterCallback<GeometryChangedEvent>(OnGeometryChanged));
         }
 
-        /// <summary>Sin conexiones posibles: el visor no edita.</summary>
+        /// <summary>Sin conexiones nuevas todavía: llegan con la edición estructural.</summary>
         public override List<Port> GetCompatiblePorts(Port startPort, NodeAdapter adapter)
             => new List<Port>();
 

@@ -12,4 +12,5 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: f54bd912fbd194785974fd6658ed6c2b, type: 3}
   m_Name: Mercader
   m_EditorClassIdentifier: Neurohard.Playwright.Unity::Neurohard.Playwright.Unity.DialogueGraphAsset
-  json: {fileID: 0}
+  json: {fileID: 4900000, guid: 6d47a919c1aab4e7aa391ea14e39b2db, type: 3}
+  _lastValidatedJson: {fileID: 4900000, guid: 6d47a919c1aab4e7aa391ea14e39b2db, type: 3}

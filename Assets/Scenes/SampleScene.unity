@@ -426,9 +426,9 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: ddf23d36ef9434ec89db4a76dfbfd365, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::UiGraphDemo
-  graphAsset: {fileID: 11400000, guid: def33de5581514f6c83dc916c262ddbb, type: 2}
+  graphAsset: {fileID: 11400000, guid: e3f296d35281243398db33433227ed27, type: 2}
   presenter: {fileID: 1566678581}
-  oroInicial: 1
+  carismaInicial: 1
 --- !u!114 &1566678581
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -442,7 +442,8 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::UiToolkitPresenter
   charactersPerSecond: 45
-  inputProvider: {fileID: 1566678579}
+  mostrarBloqueadas: 1
+  mostrarMotivo: 1
 --- !u!114 &1566678582
 MonoBehaviour:
   m_ObjectHideFlags: 0

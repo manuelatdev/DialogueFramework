@@ -146,9 +146,9 @@ namespace Neurohard.Playwright.Tests
         }
 
         [Test]
-public void ElEscritorCubreTodasLasVariantesDeCondicion()
-{
-    Condition[] todas = {
+        public void ElEscritorCubreTodasLasVariantesDeCondicion()
+        {
+            Condition[] todas = {
         Condition.Always.Instance,
         new Condition.Compare("a", ComparisonOp.Equal, 1),
         new Condition.All(new Condition[] { Condition.Always.Instance }),
@@ -157,18 +157,49 @@ public void ElEscritorCubreTodasLasVariantesDeCondicion()
         new Condition.Query("puede_comprar", new[] { "cuerda" })
     };
 
-    foreach (var c in todas)
-    {
-        var g = new DialogueGraph { Start = "a" };
-        var a = g.Add(new GraphNode { Id = "a", Type = NodeType.Line, Line = new GraphLine { Text = "x" } });
-        a.Out.Add(new GraphEdge { To = "a", When = c });
+            foreach (var c in todas)
+            {
+                var g = new DialogueGraph { Start = "a" };
+                var a = g.Add(new GraphNode { Id = "a", Type = NodeType.Line, Line = new GraphLine { Text = "x" } });
+                a.Out.Add(new GraphEdge { To = "a", When = c });
 
-        var json = GraphWriter.ToJson(g);
-        Assert.AreEqual(json, GraphWriter.ToJson(GraphReader.FromJson(json)),
-            $"El round-trip falla para {c.GetType().Name}");
+                var json = GraphWriter.ToJson(g);
+                Assert.AreEqual(json, GraphWriter.ToJson(GraphReader.FromJson(json)),
+                    $"El round-trip falla para {c.GetType().Name}");
+            }
+        }
+        [Test]
+        public void DeshacerYRehacer_RestauranElEstado()
+        {
+            var history = new GraphHistory();
+            var g = new DialogueGraph { Start = "a" };
+            g.Add(new GraphNode { Id = "a", Type = NodeType.Line, Line = new GraphLine { Text = "uno" } });
+
+            history.Record(g);                      // estado con 1 nodo
+            g.Add(new GraphNode { Id = "b", Type = NodeType.Line, Line = new GraphLine { Text = "dos" } });
+
+            Assert.IsTrue(history.CanUndo);
+            var previo = GraphReader.FromJson(history.Undo(g));
+            Assert.AreEqual(1, previo.Nodes.Count);
+
+            Assert.IsTrue(history.CanRedo);
+            var rehecho = GraphReader.FromJson(history.Redo(previo));
+            Assert.AreEqual(2, rehecho.Nodes.Count);
+        }
+
+        [Test]
+        public void RegistrarAlgoNuevo_DescartaElRedo()
+        {
+            var history = new GraphHistory();
+            var g = new DialogueGraph { Start = "a" };
+            g.Add(new GraphNode { Id = "a", Type = NodeType.Line, Line = new GraphLine { Text = "uno" } });
+
+            history.Record(g);
+            history.Undo(g);
+            Assert.IsTrue(history.CanRedo);
+
+            history.Record(g);
+            Assert.IsFalse(history.CanRedo);
+        }
     }
-}
-    }
-
-
 }
