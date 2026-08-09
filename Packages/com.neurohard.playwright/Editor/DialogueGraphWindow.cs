@@ -108,6 +108,11 @@ namespace Neurohard.Playwright.Editor
             _view.style.flexGrow = 1;
             _view.WillModify += RecordUndo;
             _view.Modified += MarkDirty;
+            _view.Aborted += _history.Discard;
+            _view.StructureChanged += () =>
+            {
+                if (_asset != null && _asset.TryGetGraph(out var g, out _)) ShowGraph(g, encuadrar: false);
+            };
             body.Add(_view);
 
             _panel = new SimulationPanel();
@@ -205,9 +210,9 @@ namespace Neurohard.Playwright.Editor
         }
 
         /// <summary>Vuelca un grafo a la vista, el panel y las incidencias.</summary>
-        private void ShowGraph(DialogueGraph graph)
+        private void ShowGraph(DialogueGraph graph, bool encuadrar = true)
         {
-            _view.Load(graph);
+            _view.Load(graph, encuadrar);
             _panel.Rebuild(graph);
 
             var report = GraphValidator.Validate(graph);
@@ -265,7 +270,7 @@ namespace Neurohard.Playwright.Editor
             {
                 var restored = GraphReader.FromJson(json);
                 _asset.ReplaceGraph(restored);
-                ShowGraph(restored);
+                ShowGraph(restored, encuadrar: false);
 
                 hasUnsavedChanges = true;
                 UpdateTitle();

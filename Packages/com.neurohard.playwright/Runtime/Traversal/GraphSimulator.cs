@@ -17,9 +17,9 @@ namespace Neurohard.Playwright
 
     public sealed class SimulationResult
     {
-        /// <summary>Estado de cada arista, indexado por nodo y posición en Out.</summary>
-        public Dictionary<(string nodeId, int index), EdgeState> Edges { get; }
-            = new Dictionary<(string, int), EdgeState>();
+        /// <summary>Estado de cada arista, indexado por la propia arista.</summary>
+        private readonly Dictionary<GraphEdge, EdgeState> _edges =
+            new Dictionary<GraphEdge, EdgeState>();
 
         /// <summary>Nodos alcanzables siguiendo solo aristas transitables.</summary>
         public HashSet<string> Reachable { get; } = new HashSet<string>();
@@ -34,8 +34,10 @@ namespace Neurohard.Playwright
         public string StoppedAt { get; internal set; }
         public string StopReason { get; internal set; }
 
-        public EdgeState StateOf(string nodeId, int index)
-            => Edges.TryGetValue((nodeId, index), out var state) ? state : EdgeState.Broken;
+        internal void SetState(GraphEdge edge, EdgeState state) => _edges[edge] = state;
+
+        public EdgeState StateOf(GraphEdge edge)
+            => edge != null && _edges.TryGetValue(edge, out var state) ? state : EdgeState.Broken;
     }
 
     /// <summary>
@@ -61,22 +63,20 @@ namespace Neurohard.Playwright
         private static void EvaluateAllEdges(DialogueGraph graph, EvaluationContext ctx, SimulationResult result)
         {
             foreach (var node in graph.Nodes)
-                for (var i = 0; i < node.Out.Count; i++)
+                foreach (var edge in node.Out)
                 {
-                    var edge = node.Out[i];
-
                     if (string.IsNullOrEmpty(edge.To) || graph.Find(edge.To) == null)
                     {
-                        result.Edges[(node.Id, i)] = EdgeState.Broken;
+                        result.SetState(edge, EdgeState.Broken);
                         continue;
                     }
 
                     var passable = edge.When == null || edge.When.Evaluate(ctx);
 
-                    result.Edges[(node.Id, i)] =
+                    result.SetState(edge,
                         passable ? EdgeState.Passable
                         : edge.HideWhenUnavailable ? EdgeState.Hidden
-                        : EdgeState.Blocked;
+                        : EdgeState.Blocked);
                 }
         }
 
@@ -92,14 +92,12 @@ namespace Neurohard.Playwright
             while (pending.Count > 0)
             {
                 var node = pending.Dequeue();
-                for (var i = 0; i < node.Out.Count; i++)
+                foreach (var edge in node.Out)
                 {
-                    if (result.StateOf(node.Id, i) != EdgeState.Passable) continue;
+                    if (result.StateOf(edge) != EdgeState.Passable) continue;
+                    if (!result.Reachable.Add(edge.To)) continue;
 
-                    var target = node.Out[i].To;
-                    if (!result.Reachable.Add(target)) continue;
-
-                    var next = graph.Find(target);
+                    var next = graph.Find(edge.To);
                     if (next != null) pending.Enqueue(next);
                 }
             }
@@ -153,17 +151,17 @@ namespace Neurohard.Playwright
         private static int CountVisibleOptions(GraphNode node, SimulationResult result)
         {
             var count = 0;
-            for (var i = 0; i < node.Out.Count; i++)
-                if (node.Out[i].IsOption && result.StateOf(node.Id, i) == EdgeState.Passable)
+            foreach (var edge in node.Out)
+                if (edge.IsOption && result.StateOf(edge) == EdgeState.Passable)
                     count++;
             return count;
         }
 
         private static string FirstPassable(GraphNode node, SimulationResult result)
         {
-            for (var i = 0; i < node.Out.Count; i++)
-                if (result.StateOf(node.Id, i) == EdgeState.Passable)
-                    return node.Out[i].To;
+            foreach (var edge in node.Out)
+                if (result.StateOf(edge) == EdgeState.Passable)
+                    return edge.To;
             return null;
         }
     }

@@ -54,5 +54,11 @@ namespace Neurohard.Playwright.Io
             _undo.Clear();
             _redo.Clear();
         }
+
+        /// <summary>Descarta la última instantánea: la operación no cambió nada.</summary>
+        public void Discard()
+        {
+            if (_undo.Count > 0) _undo.RemoveAt(_undo.Count - 1);
+        }
     }
 }
